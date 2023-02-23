@@ -13,3 +13,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# IDE configure files
+.vscode
+.idea
+.vs
+
+# build directory
+build/
+bin/
