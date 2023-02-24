@@ -54,7 +54,7 @@ type Comment @goModel(
 }
 
 type Query {
-  users: [User]
+  users: [User!]!
 }
 
 input NewUser {

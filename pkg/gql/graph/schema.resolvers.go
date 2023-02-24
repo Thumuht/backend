@@ -25,9 +25,9 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*db.User, error) {
-	var users []*db.User
-	_, err := r.DB.NewSelect().Model(&users).Exec(ctx)
+func (r *queryResolver) Users(ctx context.Context) ([]db.User, error) {
+	var users []db.User
+	err := r.DB.NewSelect().Model(&users).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
