@@ -1,28 +1,66 @@
+directive @goModel(
+	model: String
+	models: [String!]
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+
+directive @goField(
+	forceResolver: Boolean
+	name: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @goTag(
+	key: String!
+	value: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+
 # GraphQL schema example
 #
 # https://gqlgen.com/getting-started/
 
-type Todo {
+type User @goModel(
+  model: "backend/pkg/db.User"
+){
   id: ID!
-  text: String!
-  done: Boolean!
-  user: User!
+  loginName: String!
+  nickname: String
+  password: String
+  email: String
+  about: String
+
+  post: [Post]
+  comment: [Comment]
 }
 
-type User {
+type Post @goModel(
+  model: "backend/pkg/db.Post"
+){
   id: ID!
-  name: String!
+  title: String
+  content: String
+
+  user: User
+  comment: [Comment]
+}
+
+type Comment @goModel(
+  model: "backend/pkg/db.Comment"
+){
+  id: ID!
+  content: String
+
+  user: User
+  post: Post
 }
 
 type Query {
-  todos: [Todo!]!
+  users: [User]
 }
 
-input NewTodo {
-  text: String!
-  userId: String!
+input NewUser {
+  loginName: String!
 }
 
 type Mutation {
-  createTodo(input: NewTodo!): Todo!
+  createUser(input: NewUser!): User!
 }
