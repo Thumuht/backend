@@ -21,7 +21,7 @@ directive @goTag(
 type User @goModel(
   model: "backend/pkg/db.User"
 ){
-  id: ID!
+  id: Int!
   loginName: String!
   nickname: String
   password: String
@@ -35,7 +35,7 @@ type User @goModel(
 type Post @goModel(
   model: "backend/pkg/db.Post"
 ){
-  id: ID!
+  id: Int!
   title: String
   content: String
 
@@ -46,21 +46,42 @@ type Post @goModel(
 type Comment @goModel(
   model: "backend/pkg/db.Comment"
 ){
-  id: ID!
+  id: Int!
   content: String
 
   user: User
   post: Post
 }
 
-type Query {
-  users: [User!]!
-}
 
 input NewUser {
   loginName: String!
 }
 
+input NewPost {
+  userId: Int!
+  title: String
+  content: String
+}
+
+input NewComment {
+  userId: Int!
+  postId: Int!
+  content: String
+}
+
 type Mutation {
   createUser(input: NewUser!): User!
+  createPost(input: NewPost!): Post!
+  createComment(input: NewComment!): Comment!
+
+  deleteUser(input: Int!): Boolean!
+  deletePost(input: Int!): Boolean!
+  deleteComment(input: Int!): Boolean!
+}
+
+type Query {
+  users: [User!]!
+  posts: [Post!]!
+  comment: [Comment!]!
 }

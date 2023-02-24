@@ -24,7 +24,7 @@ type Post struct {
 	Content string `json:"content" bun:"content"`
 	UserID  int32  `json:"userId" bun:"post_userid"`
 
-	User    *User      `json:"user" bun:"rel:belongs-to,join:post_userid=user_id"`
+	User    *User      `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
 	Comment []*Comment `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
 }
 
@@ -36,6 +36,6 @@ type Comment struct {
 	UserID  int32  `json:"userId" bun:"comment_userid"`
 	PostID  int32  `json:"postId" bun:"comment_postid"`
 
-	User *User `json:"user" bun:"rel:belongs-to,join:comment_userid=user_id"`
-	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id"`
+	User *User `json:"user" bun:"rel:belongs-to,join:comment_userid=user_id,on_delete:cascade"`
+	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
 }
