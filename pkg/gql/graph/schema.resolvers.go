@@ -24,15 +24,90 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	return user, nil
 }
 
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*db.Post, error) {
+	post := &db.Post{
+		UserID:  int32(input.UserID),
+		Content: *input.Content,
+		Title:   *input.Title,
+	}
+	_, err := r.DB.NewInsert().Model(post).Returning("*").Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
+// CreateComment is the resolver for the createComment field.
+func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewComment) (*db.Comment, error) {
+	comment := &db.Comment{
+		UserID:  int32(input.UserID),
+		PostID:  int32(input.PostID),
+		Content: *input.Content,
+	}
+	_, err := r.DB.NewInsert().Model(comment).Returning("*").Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return comment, nil
+}
+
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, input int) (bool, error) {
+	_, err := r.DB.NewDelete().Model((*db.User)(nil)).Where("user_id = ?", input).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// DeletePost is the resolver for the deletePost field.
+func (r *mutationResolver) DeletePost(ctx context.Context, input int) (bool, error) {
+	_, err := r.DB.NewDelete().Model((*db.Post)(nil)).Where("post_id = ?", input).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// DeleteComment is the resolver for the deleteComment field.
+func (r *mutationResolver) DeleteComment(ctx context.Context, input int) (bool, error) {
+	_, err := r.DB.NewDelete().Model((*db.Comment)(nil)).Where("comment_id = ?", input).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]db.User, error) {
 	var users []db.User
-	err := r.DB.NewSelect().Model(&users).Scan(ctx)
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return users, nil
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]db.Post, error) {
+	var posts []db.Post
+	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
+// Comment is the resolver for the comment field.
+func (r *queryResolver) Comment(ctx context.Context) ([]db.Comment, error) {
+	var comments []db.Comment
+	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return comments, nil
 }
 
 // Mutation returns MutationResolver implementation.
