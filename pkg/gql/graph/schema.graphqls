@@ -74,14 +74,28 @@ input NewComment {
   content: String
 }
 
+input UpdatePost {
+  postId: Int!
+  title: String
+  content: String
+}
+
+input UpdateComment {
+  commentId: Int!
+  content: String
+}
+
 type Mutation {
-  createUser(input: NewUser!): User!
+  createUser (input: NewUser!): User!
   createPost(input: NewPost!): Post!
   createComment(input: NewComment!): Comment!
 
   deleteUser(input: Int!): Boolean!
   deletePost(input: Int!): Boolean!
   deleteComment(input: Int!): Boolean!
+
+  updatePost(input: UpdatePost!): Post!
+  updateComment(input: UpdateComment!): Comment!
 }
 
 type Query {

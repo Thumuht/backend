@@ -17,3 +17,14 @@ type NewPost struct {
 type NewUser struct {
 	LoginName string `json:"loginName"`
 }
+
+type UpdateComment struct {
+	CommentID int     `json:"commentId"`
+	Content   *string `json:"content"`
+}
+
+type UpdatePost struct {
+	PostID  int     `json:"postId"`
+	Title   *string `json:"title"`
+	Content *string `json:"content"`
+}

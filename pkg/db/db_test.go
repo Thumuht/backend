@@ -50,9 +50,9 @@ func TestPost(t *testing.T) {
 		t.Errorf("testpost: q user failed")
 	}
 	post := &Post{
-		Title: "test",
+		Title:   "test",
 		Content: "Test",
-		UserID: dbUser.ID,
+		UserID:  dbUser.ID,
 	}
 	_, err = db.NewInsert().Model(post).Exec(ctx)
 	if err != nil {
