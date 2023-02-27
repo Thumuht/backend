@@ -12,7 +12,7 @@ import (
 
 type App struct {
 	*gin.Engine
-	DB *bun.DB
+	DB  *bun.DB
 	GQL *handler.Server
 }
 
@@ -31,19 +31,19 @@ func NewForum() *App {
 			Resolvers: &graph.Resolver{
 				DB: app.DB,
 			},
-		}))	
+		}))
 
 	app.Engine = gin.New()
-	
+
 	SetRouter(&app)
 
-  return &app
+	return &app
 }
 
 func SetRouter(app *App) {
 	app.Use(gin.Logger(), gin.Recovery())
-	
-  app.GET("/hello", router.HelloH())
+
+	app.GET("/hello", router.HelloH())
 
 	app.POST("/query", router.GraphqlH(app.GQL))
 	app.GET("/", router.PlaygroundH())
