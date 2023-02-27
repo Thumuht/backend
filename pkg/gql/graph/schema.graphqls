@@ -1,3 +1,4 @@
+# directive & helper
 directive @goModel(
 	model: String
 	models: [String!]
@@ -13,6 +14,7 @@ directive @goTag(
 	value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
+scalar Time
 
 # GraphQL schema
 
@@ -36,6 +38,8 @@ type Post @goModel(
   id: Int!
   title: String
   content: String
+  createdAt: Time
+  updatedAt: Time
 
   user: User
   comment: [Comment]
@@ -46,7 +50,9 @@ type Comment @goModel(
 ){
   id: Int!
   content: String
-
+  createdAt: Time
+  updatedAt: Time
+  
   user: User
   post: Post
 }

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/uptrace/bun"
@@ -15,7 +16,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestDB(t *testing.T) {
+func TestUser(t *testing.T) {
 	ctx := context.Background()
 	user := &User{
 		LoginName: "thumuht",
@@ -38,5 +39,26 @@ func TestDB(t *testing.T) {
 		dbUser.About != user.About {
 		t.Errorf("query field not identical to original one")
 	}
+
+}
+
+func TestPost(t *testing.T) {
+	ctx := context.Background()
+	dbUser := new(User)
+	err := db.NewSelect().Model(dbUser).Where("login_name = ?", "thumuht").Scan(ctx)
+	if err != nil {
+		t.Errorf("testpost: q user failed")
+	}
+	post := &Post{
+		Title: "test",
+		Content: "Test",
+		UserID: dbUser.ID,
+	}
+	_, err = db.NewInsert().Model(post).Exec(ctx)
+	if err != nil {
+		t.Errorf("testpost: i post failed")
+	}
+	db.NewSelect().Model(post).Where("title = ?", "test").Scan(ctx)
+	fmt.Println(post.CreatedAt)
 
 }
