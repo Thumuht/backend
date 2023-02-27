@@ -3,8 +3,6 @@ package graph
 //go:generate go run github.com/99designs/gqlgen generate
 
 import (
-	"backend/pkg/db"
-
 	"github.com/uptrace/bun"
 )
 
@@ -15,5 +13,5 @@ import (
 type Resolver struct {
 	DB *bun.DB
 	// TODO: use Redis
-	Sessions db.Session
+	Sessions map[string]string
 }

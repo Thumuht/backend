@@ -4,7 +4,11 @@ import (
 	database "backend/pkg/db"
 	"backend/pkg/gql/graph"
 	"backend/pkg/router"
+	"backend/pkg/utils"
+	"context"
+	"fmt"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/uptrace/bun"
@@ -12,8 +16,9 @@ import (
 
 type App struct {
 	*gin.Engine
-	DB  *bun.DB
-	GQL *handler.Server
+	DB       *bun.DB
+	Sessions map[string]string
+	GQL      *handler.Server
 }
 
 func NewForum() *App {
@@ -26,11 +31,29 @@ func NewForum() *App {
 	}
 	database.InitModels(app.DB)
 
+	app.Sessions = make(map[string]string)
+
 	app.GQL = handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{
 			Resolvers: &graph.Resolver{
 				DB:       app.DB,
-				Sessions: make(database.Session),
+				Sessions: app.Sessions,
+			},
+			Directives: graph.DirectiveRoot{
+				Login: func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+					gctx, err := utils.GinContextFromContext(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("cannot get gin context, access denied: %w", err)
+					}
+
+					token := gctx.GetHeader("Token")
+					for _, v := range app.Sessions {
+						if v == token {
+							return next(ctx)
+						}
+					}
+					return nil, fmt.Errorf("no token %s access denied", token)
+				},
 			},
 		}))
 
@@ -42,7 +65,7 @@ func NewForum() *App {
 }
 
 func SetRouter(app *App) {
-	app.Use(gin.Logger(), gin.Recovery(), router.GinContextToContextMiddleware())
+	app.Use(gin.Logger(), gin.Recovery(), utils.GinContextToContextMiddleware())
 
 	app.GET("/hello", router.HelloH())
 

@@ -50,4 +50,3 @@ type Comment struct {
 
 // TODO(wj): use Redis to save user session information
 // perhaps now save in mem is sufficient...
-type Session map[string]string

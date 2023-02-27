@@ -88,15 +88,15 @@ input UpdateComment {
 
 type Mutation {
   createUser (input: NewUser!): User!
-  createPost(input: NewPost!): Post!
-  createComment(input: NewComment!): Comment!
+  createPost(input: NewPost!): Post!                     @login
+  createComment(input: NewComment!): Comment!            @login
 
-  deleteUser(input: Int!): Boolean!
-  deletePost(input: Int!): Boolean!
-  deleteComment(input: Int!): Boolean!
+  deleteUser(input: Int!): Boolean!                      @login
+  deletePost(input: Int!): Boolean!                      @login
+  deleteComment(input: Int!): Boolean!                   @login
 
-  updatePost(input: UpdatePost!): Post!
-  updateComment(input: UpdateComment!): Comment!
+  updatePost(input: UpdatePost!): Post!                  @login
+  updateComment(input: UpdateComment!): Comment!         @login
 }
 
 type Query {
