@@ -14,9 +14,7 @@ directive @goTag(
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
 
-# GraphQL schema example
-#
-# https://gqlgen.com/getting-started/
+# GraphQL schema
 
 type User @goModel(
   model: "backend/pkg/db.User"
