@@ -47,3 +47,7 @@ type Comment struct {
 	User *User `json:"user" bun:"rel:belongs-to,join:comment_userid=user_id,on_delete:cascade"`
 	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
 }
+
+// TODO(wj): use Redis to save user session information
+// perhaps now save in mem is sufficient...
+type Session map[string]string

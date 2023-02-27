@@ -29,7 +29,8 @@ func NewForum() *App {
 	app.GQL = handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{
 			Resolvers: &graph.Resolver{
-				DB: app.DB,
+				DB:       app.DB,
+				Sessions: make(database.Session),
 			},
 		}))
 
@@ -41,7 +42,7 @@ func NewForum() *App {
 }
 
 func SetRouter(app *App) {
-	app.Use(gin.Logger(), gin.Recovery())
+	app.Use(gin.Logger(), gin.Recovery(), router.GinContextToContextMiddleware())
 
 	app.GET("/hello", router.HelloH())
 

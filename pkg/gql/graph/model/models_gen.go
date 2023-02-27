@@ -2,6 +2,11 @@
 
 package model
 
+type LoginSession struct {
+	LoginName string `json:"loginName"`
+	Password  string `json:"password"`
+}
+
 type NewComment struct {
 	UserID  int     `json:"userId"`
 	PostID  int     `json:"postId"`
@@ -16,6 +21,7 @@ type NewPost struct {
 
 type NewUser struct {
 	LoginName string `json:"loginName"`
+	Password  string `json:"password"`
 }
 
 type UpdateComment struct {

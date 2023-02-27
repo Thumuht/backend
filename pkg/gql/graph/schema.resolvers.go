@@ -9,15 +9,23 @@ import (
 	"backend/pkg/gql/graph/model"
 	"context"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*db.User, error) {
-	user := &db.User{
-		LoginName: input.LoginName,
+	pw, err := bcrypt.GenerateFromPassword([]byte(input.Password), 0)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err := r.DB.NewInsert().Model(user).Returning("*").Exec(ctx)
+	user := &db.User{
+		LoginName: input.LoginName,
+		Password:  string(pw),
+	}
+
+	_, err = r.DB.NewInsert().Model(user).Returning("*").Exec(ctx)
 	if err != nil {
 		return nil, err
 	}

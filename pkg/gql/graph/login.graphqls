@@ -1,0 +1,10 @@
+directive @login on FIELD_DEFINITION
+
+input LoginSession {
+  loginName: String!
+  password: String!
+}
+
+extend type Mutation {
+  login(input: LoginSession!): String!
+}

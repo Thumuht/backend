@@ -60,6 +60,7 @@ type Comment @goModel(
 
 input NewUser {
   loginName: String!
+  password: String!
 }
 
 input NewPost {
