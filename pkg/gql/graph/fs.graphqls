@@ -1,0 +1,17 @@
+scalar Upload
+
+type Attachment @goModel(
+  model: "backend/pkg/db.Attachment"
+){
+  postId: Int!
+  fileName: String!
+}
+
+input PostUpload {
+  upload: Upload!
+  postId: Int!
+}
+
+extend type Mutation {
+  fileUpload(input: PostUpload): Boolean! @login
+}

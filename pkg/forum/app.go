@@ -4,16 +4,22 @@ import (
 	database "backend/pkg/db"
 	"backend/pkg/gql/graph"
 	"backend/pkg/router"
+	"backend/pkg/utils"
+	"context"
+	"fmt"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
 )
 
 type App struct {
 	*gin.Engine
-	DB *bun.DB
-	GQL *handler.Server
+	DB       *bun.DB
+	Sessions map[string]string
+	GQL      *handler.Server
 }
 
 func NewForum() *App {
@@ -26,27 +32,49 @@ func NewForum() *App {
 	}
 	database.InitModels(app.DB)
 
+	app.Sessions = make(map[string]string)
+
 	app.GQL = handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{
 			Resolvers: &graph.Resolver{
-				DB: app.DB,
+				DB:       app.DB,
+				Sessions: app.Sessions,
 			},
-		}))	
+			Directives: graph.DirectiveRoot{
+				Login: func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+					gctx, err := utils.GinContextFromContext(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("cannot get gin context, access denied: %w", err)
+					}
+
+					token := gctx.GetHeader("Token")
+					for k, v := range app.Sessions {
+						if v == token {
+							gctx.AddParam("appuser", k)
+							return next(ctx)
+						}
+					}
+					return nil, fmt.Errorf("no token %s access denied", token)
+				},
+			},
+		}))
 
 	app.Engine = gin.New()
-	
+
 	SetRouter(&app)
 
-  return &app
+	return &app
 }
 
 func SetRouter(app *App) {
-	app.Use(gin.Logger(), gin.Recovery())
-	
-  app.GET("/hello", router.HelloH())
+	app.Use(gin.Logger(), gin.Recovery(), utils.GinContextToContextMiddleware())
+
+	app.GET("/hello", router.HelloH())
 
 	app.POST("/query", router.GraphqlH(app.GQL))
 	app.GET("/", router.PlaygroundH())
+
+	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
 }
 
 func (app *App) RunForum(addr string) {

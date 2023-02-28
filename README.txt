@@ -1,3 +1,7 @@
 Thumuht 后端服务
 
-TODO(wj, refactor): 建一个 App 对象，对它依赖注入，让它拥有所有的资源管理器
+TODO:
+  foreign key via hooks
+  upload & download files
+  
+curl localhost:8899/query   -F operations='{ "query": "mutation($req: Upload!) { fileUpload(input: {postId: 1, upload: $req}) }", "variables": { "req": null } }'   -F map='{ "0": ["variables.req"] }'   -F 0=@amdmanual.pdf
