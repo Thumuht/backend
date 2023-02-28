@@ -30,8 +30,9 @@ type Post struct {
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 
-	User    *User      `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
-	Comment []*Comment `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
+	User       *User         `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
+	Comment    []*Comment    `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
+	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:post_id=attachment_postid"`
 }
 
 type Comment struct {
@@ -48,5 +49,11 @@ type Comment struct {
 	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
 }
 
-// TODO(wj): use Redis to save user session information
-// perhaps now save in mem is sufficient...
+type Attachment struct {
+	bun.BaseModel `bun:"table:attachment"`
+
+	PostID   int32  `json:"postId" bun:"attachment_postid"`
+	FileName string `json:"fileName" bun:"file_name"`
+
+	Post *Post `bun:"rel:belongs-to,join:attachment_postid=post_id,on_delete:cascade"`
+}

@@ -47,8 +47,9 @@ func NewForum() *App {
 					}
 
 					token := gctx.GetHeader("Token")
-					for _, v := range app.Sessions {
+					for k, v := range app.Sessions {
 						if v == token {
+							gctx.AddParam("appuser", k)
 							return next(ctx)
 						}
 					}
