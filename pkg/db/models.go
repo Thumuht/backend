@@ -52,8 +52,9 @@ type Comment struct {
 type Attachment struct {
 	bun.BaseModel `bun:"table:attachment"`
 
-	PostID   int32  `json:"postId" bun:"attachment_postid"`
-	FileName string `json:"fileName" bun:"file_name"`
+	PostID    int32     `json:"postId" bun:"attachment_postid"`
+	FileName  string    `json:"fileName" bun:"file_name"`
+	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 
 	Post *Post `bun:"rel:belongs-to,join:attachment_postid=post_id,on_delete:cascade"`
 }

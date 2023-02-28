@@ -2,6 +2,10 @@
 
 package model
 
+import (
+	"github.com/99designs/gqlgen/graphql"
+)
+
 type LoginSession struct {
 	LoginName string `json:"loginName"`
 	Password  string `json:"password"`
@@ -22,6 +26,11 @@ type NewPost struct {
 type NewUser struct {
 	LoginName string `json:"loginName"`
 	Password  string `json:"password"`
+}
+
+type PostUpload struct {
+	Upload graphql.Upload `json:"upload"`
+	PostID int            `json:"postId"`
 }
 
 type UpdateComment struct {

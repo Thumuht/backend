@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
 )
 
@@ -72,6 +73,8 @@ func SetRouter(app *App) {
 
 	app.POST("/query", router.GraphqlH(app.GQL))
 	app.GET("/", router.PlaygroundH())
+
+	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
 }
 
 func (app *App) RunForum(addr string) {

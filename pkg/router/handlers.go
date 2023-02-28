@@ -24,8 +24,7 @@ func PlaygroundH() gin.HandlerFunc {
 }
 
 func HelloH() gin.HandlerFunc {
-	s := fmt.Sprintf("Hello World!\nNow Time is %s", time.Now())
 	return func(ctx *gin.Context) {
-		ctx.String(200, s)
+		ctx.String(200, fmt.Sprintf("Hello World!\nNow Time is %s", time.Now()))
 	}
 }

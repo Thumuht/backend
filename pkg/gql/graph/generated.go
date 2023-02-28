@@ -47,6 +47,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Attachment struct {
+		FileName func(childComplexity int) int
+		PostID   func(childComplexity int) int
+	}
+
 	Comment struct {
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -63,7 +68,7 @@ type ComplexityRoot struct {
 		DeleteComment func(childComplexity int, input int) int
 		DeletePost    func(childComplexity int, input int) int
 		DeleteUser    func(childComplexity int, input int) int
-		FileUpload    func(childComplexity int, file graphql.Upload) int
+		FileUpload    func(childComplexity int, input *model.PostUpload) int
 		Login         func(childComplexity int, input model.LoginSession) int
 		UpdateComment func(childComplexity int, input model.UpdateComment) int
 		UpdatePost    func(childComplexity int, input model.UpdatePost) int
@@ -106,7 +111,7 @@ type MutationResolver interface {
 	DeleteComment(ctx context.Context, input int) (bool, error)
 	UpdatePost(ctx context.Context, input model.UpdatePost) (*db.Post, error)
 	UpdateComment(ctx context.Context, input model.UpdateComment) (*db.Comment, error)
-	FileUpload(ctx context.Context, file graphql.Upload) (bool, error)
+	FileUpload(ctx context.Context, input *model.PostUpload) (bool, error)
 	Login(ctx context.Context, input model.LoginSession) (string, error)
 }
 type QueryResolver interface {
@@ -129,6 +134,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Attachment.fileName":
+		if e.complexity.Attachment.FileName == nil {
+			break
+		}
+
+		return e.complexity.Attachment.FileName(childComplexity), true
+
+	case "Attachment.postId":
+		if e.complexity.Attachment.PostID == nil {
+			break
+		}
+
+		return e.complexity.Attachment.PostID(childComplexity), true
 
 	case "Comment.content":
 		if e.complexity.Comment.Content == nil {
@@ -254,7 +273,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.FileUpload(childComplexity, args["file"].(graphql.Upload)), true
+		return e.complexity.Mutation.FileUpload(childComplexity, args["input"].(*model.PostUpload)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -430,6 +449,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNewComment,
 		ec.unmarshalInputNewPost,
 		ec.unmarshalInputNewUser,
+		ec.unmarshalInputPostUpload,
 		ec.unmarshalInputUpdateComment,
 		ec.unmarshalInputUpdatePost,
 	)
@@ -606,15 +626,15 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_fileUpload_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 graphql.Upload
-	if tmp, ok := rawArgs["file"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
-		arg0, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, tmp)
+	var arg0 *model.PostUpload
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPostUpload2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐPostUpload(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["file"] = arg0
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -715,6 +735,94 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Attachment_postId(ctx context.Context, field graphql.CollectedField, obj *db.Attachment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attachment_postId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Attachment_postId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Attachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Attachment_fileName(ctx context.Context, field graphql.CollectedField, obj *db.Attachment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attachment_fileName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Attachment_fileName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Attachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *db.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_id(ctx, field)
@@ -1663,7 +1771,7 @@ func (ec *executionContext) _Mutation_fileUpload(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().FileUpload(rctx, fc.Args["file"].(graphql.Upload))
+		return ec.resolvers.Mutation().FileUpload(rctx, fc.Args["input"].(*model.PostUpload))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4680,6 +4788,42 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPostUpload(ctx context.Context, obj interface{}) (model.PostUpload, error) {
+	var it model.PostUpload
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"upload", "postId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "upload":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upload"))
+			it.Upload, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "postId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
+			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateComment(ctx context.Context, obj interface{}) (model.UpdateComment, error) {
 	var it model.UpdateComment
 	asMap := map[string]interface{}{}
@@ -4767,6 +4911,41 @@ func (ec *executionContext) unmarshalInputUpdatePost(ctx context.Context, obj in
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var attachmentImplementors = []string{"Attachment"}
+
+func (ec *executionContext) _Attachment(ctx context.Context, sel ast.SelectionSet, obj *db.Attachment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, attachmentImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Attachment")
+		case "postId":
+
+			out.Values[i] = ec._Attachment_postId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileName":
+
+			out.Values[i] = ec._Attachment_fileName(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var commentImplementors = []string{"Comment"}
 
@@ -6081,6 +6260,14 @@ func (ec *executionContext) marshalOPost2ᚖbackendᚋpkgᚋdbᚐPost(ctx contex
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPostUpload2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐPostUpload(ctx context.Context, v interface{}) (*model.PostUpload, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPostUpload(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
