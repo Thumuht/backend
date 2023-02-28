@@ -1,3 +1,4 @@
+# directive & helper
 directive @goModel(
 	model: String
 	models: [String!]
@@ -13,6 +14,7 @@ directive @goTag(
 	value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
+scalar Time
 
 # GraphQL schema
 
@@ -36,6 +38,8 @@ type Post @goModel(
   id: Int!
   title: String
   content: String
+  createdAt: Time
+  updatedAt: Time
 
   user: User
   comment: [Comment]
@@ -46,7 +50,9 @@ type Comment @goModel(
 ){
   id: Int!
   content: String
-
+  createdAt: Time
+  updatedAt: Time
+  
   user: User
   post: Post
 }
@@ -54,6 +60,7 @@ type Comment @goModel(
 
 input NewUser {
   loginName: String!
+  password: String!
 }
 
 input NewPost {
@@ -68,14 +75,28 @@ input NewComment {
   content: String
 }
 
-type Mutation {
-  createUser(input: NewUser!): User!
-  createPost(input: NewPost!): Post!
-  createComment(input: NewComment!): Comment!
+input UpdatePost {
+  postId: Int!
+  title: String
+  content: String
+}
 
-  deleteUser(input: Int!): Boolean!
-  deletePost(input: Int!): Boolean!
-  deleteComment(input: Int!): Boolean!
+input UpdateComment {
+  commentId: Int!
+  content: String
+}
+
+type Mutation {
+  createUser (input: NewUser!): User!
+  createPost(input: NewPost!): Post!                     @login
+  createComment(input: NewComment!): Comment!            @login
+
+  deleteUser(input: Int!): Boolean!                      @login
+  deletePost(input: Int!): Boolean!                      @login
+  deleteComment(input: Int!): Boolean!                   @login
+
+  updatePost(input: UpdatePost!): Post!                  @login
+  updateComment(input: UpdateComment!): Comment!         @login
 }
 
 type Query {

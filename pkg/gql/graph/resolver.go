@@ -1,6 +1,10 @@
 package graph
 
-import "github.com/uptrace/bun"
+//go:generate go run github.com/99designs/gqlgen generate
+
+import (
+	"github.com/uptrace/bun"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -8,4 +12,6 @@ import "github.com/uptrace/bun"
 
 type Resolver struct {
 	DB *bun.DB
+	// TODO: use Redis
+	Sessions map[string]string
 }

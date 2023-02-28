@@ -1,0 +1,22 @@
+This directory contains libraries for backend
+=============================================
+THUMUHT
+=============================================
+
+config/
+  about overall configuration for this softwaare
+
+db/
+  everything related to databases
+
+forum/
+  top app instance, manage global resources
+
+gql/
+  graphql resolver & handlers
+
+router/
+  gin handlers
+
+utils/
+  middleware & utility functions

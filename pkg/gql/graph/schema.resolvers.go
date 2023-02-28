@@ -8,15 +8,24 @@ import (
 	"backend/pkg/db"
 	"backend/pkg/gql/graph/model"
 	"context"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*db.User, error) {
-	user := &db.User{
-		LoginName: input.LoginName,
+	pw, err := bcrypt.GenerateFromPassword([]byte(input.Password), 0)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err := r.DB.NewInsert().Model(user).Returning("*").Exec(ctx)
+	user := &db.User{
+		LoginName: input.LoginName,
+		Password:  string(pw),
+	}
+
+	_, err = r.DB.NewInsert().Model(user).Returning("*").Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +86,45 @@ func (r *mutationResolver) DeleteComment(ctx context.Context, input int) (bool, 
 		return false, err
 	}
 	return true, nil
+}
+
+// UpdatePost is the resolver for the updatePost field.
+func (r *mutationResolver) UpdatePost(ctx context.Context, input model.UpdatePost) (*db.Post, error) {
+	post := &db.Post{
+		ID:        int32(input.PostID),
+		UpdatedAt: time.Now(),
+	}
+
+	if input.Content != nil {
+		post.Content = *input.Content
+	}
+
+	if input.Title != nil {
+		post.Title = *input.Title
+	}
+
+	_, err := r.DB.NewUpdate().Model(post).OmitZero().WherePK().Returning("*").Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
+// UpdateComment is the resolver for the updateComment field.
+func (r *mutationResolver) UpdateComment(ctx context.Context, input model.UpdateComment) (*db.Comment, error) {
+	comment := &db.Comment{
+		ID:        int32(input.CommentID),
+		UpdatedAt: time.Now(),
+	}
+
+	if input.Content != nil {
+		comment.Content = *input.Content
+	}
+	_, err := r.DB.NewUpdate().Model(comment).OmitZero().WherePK().Returning("*").Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return comment, nil
 }
 
 // Users is the resolver for the users field.
