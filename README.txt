@@ -1,5 +1,7 @@
 Thumuht 后端服务
 
+Run `godoc -http=:6060` to read document. ( if you installed godoc )
+
 TODO:
   foreign key via hooks
   upload & download files

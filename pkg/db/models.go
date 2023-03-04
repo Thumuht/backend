@@ -49,6 +49,7 @@ type Comment struct {
 	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
 }
 
+// TODO(wj, mid): allow comment have attachments
 type Attachment struct {
 	bun.BaseModel `bun:"table:attachment"`
 
