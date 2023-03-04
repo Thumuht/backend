@@ -1,3 +1,6 @@
+/*
+Package config configs thumuht using viper.
+*/
 package config
 
 import (
@@ -6,6 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+// use viper to config this project.
+// todo(wj, low): make this thing more human friendly
 func ConfigProject() error {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")

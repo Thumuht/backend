@@ -1,3 +1,6 @@
+/*
+Package utils provides utility functions for thumuht.
+*/
 package utils
 
 import (
@@ -13,7 +16,8 @@ func (c contextKey) String() string {
 	return string(c)
 }
 
-// need header information in gql resolver
+// gql resolver need background information, and they are collected through the http
+// request by gin, so we need to save gin context into [Context.context]
 func GinContextToContextMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		c := context.WithValue(ctx.Request.Context(), contextKey("GinContextKey"), ctx)
@@ -22,6 +26,7 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 	}
 }
 
+// paired function. eXetract gcontext from context.Context
 func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 	ginContext := ctx.Value(contextKey("GinContextKey"))
 	if ginContext == nil {

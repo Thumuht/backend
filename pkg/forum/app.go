@@ -1,3 +1,6 @@
+/*
+Package forum provides thumuht app instance, manages all resources and functionalities.
+*/
 package forum
 
 import (
@@ -16,12 +19,13 @@ import (
 )
 
 type App struct {
-	*gin.Engine
-	DB       *bun.DB
-	Sessions map[string]string
-	GQL      *handler.Server
+	*gin.Engine 										// router
+	DB       *bun.DB                // db instance
+	Sessions map[string]string      // user sessions. login status. TODO(wj, mid): use Redis!
+	GQL      *handler.Server				// gql server
 }
 
+// TODO(wj, low): differ its behavior in accordance with Config..
 func NewForum() *App {
 	var app App
 	var err error

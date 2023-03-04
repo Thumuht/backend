@@ -1,3 +1,6 @@
+/*
+Package graph provides GraphQL api resolvers
+*/
 package graph
 
 //go:generate go run github.com/99designs/gqlgen generate
