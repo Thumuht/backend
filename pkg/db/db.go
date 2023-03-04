@@ -41,7 +41,6 @@ func InitPGDB() (*bun.DB, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-
 // init database models
 // should be database agnostic
 func InitModels(db *bun.DB) error {

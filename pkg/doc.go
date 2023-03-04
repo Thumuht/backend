@@ -12,6 +12,5 @@ gql: graphql request resolver
 router: handlers
 
 utils: utilities
-
 */
 package pkg
