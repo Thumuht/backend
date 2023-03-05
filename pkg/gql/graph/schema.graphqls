@@ -99,8 +99,56 @@ type Mutation {
   updateComment(input: UpdateComment!): Comment!         @login
 }
 
+enum UserOrderBy {
+  ID
+  Nickname
+}
+
+enum PostOrderBy {
+  ID
+  Title
+  Content
+  UserID
+  CreatedAt
+  UpdatedAt
+}
+
+enum CommentOrderBy {
+  ID
+  Content
+  CreatedAt
+  UpdatedAt
+}
+
+enum Order {
+  ASC
+  DESC
+}
+
+input GetUserInput {
+  limit: Int! = 10
+  offset: Int! = 0
+  orderBy: UserOrderBy! = ID
+  order: Order! = ASC
+}
+
+input GetPostInput {
+  limit: Int! = 10
+  offset: Int! = 0
+  orderBy: PostOrderBy! = ID
+  order: Order! = ASC
+}
+
+input GetCommentInput {
+  limit: Int! = 10
+  offset: Int! = 0
+  orderBy: CommentOrderBy! = ID
+  order: Order! = ASC
+}
+
+
 type Query {
-  users: [User!]!
-  posts: [Post!]!
-  comment: [Comment!]!
+  users(input: GetUserInput!): [User!]!
+  posts(input: GetPostInput): [Post!]!
+  comment(input: GetCommentInput): [Comment!]!
 }

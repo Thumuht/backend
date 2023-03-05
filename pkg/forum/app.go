@@ -81,6 +81,7 @@ func SetRouter(app *App) {
 	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
 }
 
+// Run Forum. BLOCK!!
 func (app *App) RunForum(addr string) {
 	app.Run(addr)
 }

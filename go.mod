@@ -3,7 +3,7 @@ module backend
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.24
+	github.com/99designs/gqlgen v0.17.25
 	github.com/gin-gonic/gin v1.9.0
 	github.com/uptrace/bun/dialect/sqlitedialect v1.1.12
 	github.com/uptrace/bun/extra/bundebug v1.1.12
@@ -14,6 +14,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-sqlite3 v1.14.16 // indirect
@@ -43,7 +44,6 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

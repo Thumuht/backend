@@ -3,8 +3,33 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
+
 	"github.com/99designs/gqlgen/graphql"
 )
+
+type GetCommentInput struct {
+	Limit   int            `json:"limit"`
+	Offset  int            `json:"offset"`
+	OrderBy CommentOrderBy `json:"orderBy"`
+	Order   Order          `json:"order"`
+}
+
+type GetPostInput struct {
+	Limit   int         `json:"limit"`
+	Offset  int         `json:"offset"`
+	OrderBy PostOrderBy `json:"orderBy"`
+	Order   Order       `json:"order"`
+}
+
+type GetUserInput struct {
+	Limit   int         `json:"limit"`
+	Offset  int         `json:"offset"`
+	OrderBy UserOrderBy `json:"orderBy"`
+	Order   Order       `json:"order"`
+}
 
 type LoginSession struct {
 	LoginName string `json:"loginName"`
@@ -42,4 +67,180 @@ type UpdatePost struct {
 	PostID  int     `json:"postId"`
 	Title   *string `json:"title"`
 	Content *string `json:"content"`
+}
+
+type CommentOrderBy string
+
+const (
+	CommentOrderByID        CommentOrderBy = "ID"
+	CommentOrderByContent   CommentOrderBy = "Content"
+	CommentOrderByCreatedAt CommentOrderBy = "CreatedAt"
+	CommentOrderByUpdatedAt CommentOrderBy = "UpdatedAt"
+)
+
+var AllCommentOrderBy = []CommentOrderBy{
+	CommentOrderByID,
+	CommentOrderByContent,
+	CommentOrderByCreatedAt,
+	CommentOrderByUpdatedAt,
+}
+
+func (e CommentOrderBy) IsValid() bool {
+	switch e {
+	case CommentOrderByID, CommentOrderByContent, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
+		return true
+	}
+	return false
+}
+
+func (e CommentOrderBy) String() string {
+	return string(e)
+}
+
+func (e *CommentOrderBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CommentOrderBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CommentOrderBy", str)
+	}
+	return nil
+}
+
+func (e CommentOrderBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type Order string
+
+const (
+	OrderAsc  Order = "ASC"
+	OrderDesc Order = "DESC"
+)
+
+var AllOrder = []Order{
+	OrderAsc,
+	OrderDesc,
+}
+
+func (e Order) IsValid() bool {
+	switch e {
+	case OrderAsc, OrderDesc:
+		return true
+	}
+	return false
+}
+
+func (e Order) String() string {
+	return string(e)
+}
+
+func (e *Order) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Order(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Order", str)
+	}
+	return nil
+}
+
+func (e Order) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PostOrderBy string
+
+const (
+	PostOrderByID        PostOrderBy = "ID"
+	PostOrderByTitle     PostOrderBy = "Title"
+	PostOrderByContent   PostOrderBy = "Content"
+	PostOrderByUserID    PostOrderBy = "UserID"
+	PostOrderByCreatedAt PostOrderBy = "CreatedAt"
+	PostOrderByUpdatedAt PostOrderBy = "UpdatedAt"
+)
+
+var AllPostOrderBy = []PostOrderBy{
+	PostOrderByID,
+	PostOrderByTitle,
+	PostOrderByContent,
+	PostOrderByUserID,
+	PostOrderByCreatedAt,
+	PostOrderByUpdatedAt,
+}
+
+func (e PostOrderBy) IsValid() bool {
+	switch e {
+	case PostOrderByID, PostOrderByTitle, PostOrderByContent, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
+		return true
+	}
+	return false
+}
+
+func (e PostOrderBy) String() string {
+	return string(e)
+}
+
+func (e *PostOrderBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PostOrderBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PostOrderBy", str)
+	}
+	return nil
+}
+
+func (e PostOrderBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UserOrderBy string
+
+const (
+	UserOrderByID       UserOrderBy = "ID"
+	UserOrderByNickname UserOrderBy = "Nickname"
+)
+
+var AllUserOrderBy = []UserOrderBy{
+	UserOrderByID,
+	UserOrderByNickname,
+}
+
+func (e UserOrderBy) IsValid() bool {
+	switch e {
+	case UserOrderByID, UserOrderByNickname:
+		return true
+	}
+	return false
+}
+
+func (e UserOrderBy) String() string {
+	return string(e)
+}
+
+func (e *UserOrderBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserOrderBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserOrderBy", str)
+	}
+	return nil
+}
+
+func (e UserOrderBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
