@@ -130,7 +130,10 @@ func (r *mutationResolver) UpdateComment(ctx context.Context, input model.Update
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]db.User, error) {
 	var users []db.User
-	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").Scan(ctx)
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
+		Offset(input.Offset).
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +142,12 @@ func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context, input *model.GetPostInput) ([]db.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]db.Post, error) {
 	var posts []db.Post
-	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Scan(ctx)
+	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").
+		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
+		Offset(input.Offset).Scan(ctx)
+
 	if err != nil {
 		return nil, err
 	}
@@ -149,9 +155,11 @@ func (r *queryResolver) Posts(ctx context.Context, input *model.GetPostInput) ([
 }
 
 // Comment is the resolver for the comment field.
-func (r *queryResolver) Comment(ctx context.Context, input *model.GetCommentInput) ([]db.Comment, error) {
+func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error) {
 	var comments []db.Comment
-	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").Scan(ctx)
+	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").
+		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
+		Offset(input.Offset).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}

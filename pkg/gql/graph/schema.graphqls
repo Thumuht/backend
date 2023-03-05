@@ -100,24 +100,24 @@ type Mutation {
 }
 
 enum UserOrderBy {
-  ID
-  Nickname
+  user_id
+  nickname
 }
 
 enum PostOrderBy {
-  ID
-  Title
-  Content
-  UserID
-  CreatedAt
-  UpdatedAt
+  post_id
+  title
+  content
+  userId
+  created_at
+  updated_at
 }
 
 enum CommentOrderBy {
-  ID
-  Content
-  CreatedAt
-  UpdatedAt
+  comment_id
+  content
+  created_at
+  updated_at
 }
 
 enum Order {
@@ -128,27 +128,27 @@ enum Order {
 input GetUserInput {
   limit: Int! = 10
   offset: Int! = 0
-  orderBy: UserOrderBy! = ID
+  orderBy: UserOrderBy! = user_id
   order: Order! = ASC
 }
 
 input GetPostInput {
   limit: Int! = 10
   offset: Int! = 0
-  orderBy: PostOrderBy! = ID
+  orderBy: PostOrderBy! = post_id
   order: Order! = ASC
 }
 
 input GetCommentInput {
   limit: Int! = 10
   offset: Int! = 0
-  orderBy: CommentOrderBy! = ID
+  orderBy: CommentOrderBy! = comment_id
   order: Order! = ASC
 }
 
 
 type Query {
   users(input: GetUserInput!): [User!]!
-  posts(input: GetPostInput): [Post!]!
-  comment(input: GetCommentInput): [Comment!]!
+  posts(input: GetPostInput!): [Post!]!
+  comment(input: GetCommentInput!): [Comment!]!
 }

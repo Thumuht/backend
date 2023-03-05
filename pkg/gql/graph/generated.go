@@ -85,8 +85,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Comment func(childComplexity int, input *model.GetCommentInput) int
-		Posts   func(childComplexity int, input *model.GetPostInput) int
+		Comment func(childComplexity int, input model.GetCommentInput) int
+		Posts   func(childComplexity int, input model.GetPostInput) int
 		Users   func(childComplexity int, input model.GetUserInput) int
 	}
 
@@ -116,8 +116,8 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Users(ctx context.Context, input model.GetUserInput) ([]db.User, error)
-	Posts(ctx context.Context, input *model.GetPostInput) ([]db.Post, error)
-	Comment(ctx context.Context, input *model.GetCommentInput) ([]db.Comment, error)
+	Posts(ctx context.Context, input model.GetPostInput) ([]db.Post, error)
+	Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error)
 }
 
 type executableSchema struct {
@@ -370,7 +370,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Comment(childComplexity, args["input"].(*model.GetCommentInput)), true
+		return e.complexity.Query.Comment(childComplexity, args["input"].(model.GetCommentInput)), true
 
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
@@ -382,7 +382,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Posts(childComplexity, args["input"].(*model.GetPostInput)), true
+		return e.complexity.Query.Posts(childComplexity, args["input"].(model.GetPostInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -719,10 +719,10 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_comment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.GetCommentInput
+	var arg0 model.GetCommentInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOGetCommentInput2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetCommentInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGetCommentInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetCommentInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -734,10 +734,10 @@ func (ec *executionContext) field_Query_comment_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_posts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.GetPostInput
+	var arg0 model.GetPostInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOGetPostInput2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetPostInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGetPostInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetPostInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2356,7 +2356,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Posts(rctx, fc.Args["input"].(*model.GetPostInput))
+		return ec.resolvers.Query().Posts(rctx, fc.Args["input"].(model.GetPostInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2426,7 +2426,7 @@ func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Comment(rctx, fc.Args["input"].(*model.GetCommentInput))
+		return ec.resolvers.Query().Comment(rctx, fc.Args["input"].(model.GetCommentInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4758,7 +4758,7 @@ func (ec *executionContext) unmarshalInputGetCommentInput(ctx context.Context, o
 		asMap["offset"] = 0
 	}
 	if _, present := asMap["orderBy"]; !present {
-		asMap["orderBy"] = "ID"
+		asMap["orderBy"] = "comment_id"
 	}
 	if _, present := asMap["order"]; !present {
 		asMap["order"] = "ASC"
@@ -4823,7 +4823,7 @@ func (ec *executionContext) unmarshalInputGetPostInput(ctx context.Context, obj 
 		asMap["offset"] = 0
 	}
 	if _, present := asMap["orderBy"]; !present {
-		asMap["orderBy"] = "ID"
+		asMap["orderBy"] = "post_id"
 	}
 	if _, present := asMap["order"]; !present {
 		asMap["order"] = "ASC"
@@ -4888,7 +4888,7 @@ func (ec *executionContext) unmarshalInputGetUserInput(ctx context.Context, obj 
 		asMap["offset"] = 0
 	}
 	if _, present := asMap["orderBy"]; !present {
-		asMap["orderBy"] = "ID"
+		asMap["orderBy"] = "user_id"
 	}
 	if _, present := asMap["order"]; !present {
 		asMap["order"] = "ASC"
@@ -6002,6 +6002,16 @@ func (ec *executionContext) marshalNCommentOrderBy2backendᚋpkgᚋgqlᚋgraph�
 	return v
 }
 
+func (ec *executionContext) unmarshalNGetCommentInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetCommentInput(ctx context.Context, v interface{}) (model.GetCommentInput, error) {
+	res, err := ec.unmarshalInputGetCommentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNGetPostInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetPostInput(ctx context.Context, v interface{}) (model.GetPostInput, error) {
+	res, err := ec.unmarshalInputGetPostInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNGetUserInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetUserInput(ctx context.Context, v interface{}) (model.GetUserInput, error) {
 	res, err := ec.unmarshalInputGetUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6568,22 +6578,6 @@ func (ec *executionContext) marshalOComment2ᚖbackendᚋpkgᚋdbᚐComment(ctx 
 		return graphql.Null
 	}
 	return ec._Comment(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOGetCommentInput2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetCommentInput(ctx context.Context, v interface{}) (*model.GetCommentInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputGetCommentInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOGetPostInput2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetPostInput(ctx context.Context, v interface{}) (*model.GetPostInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputGetPostInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOPost2ᚕᚖbackendᚋpkgᚋdbᚐPost(ctx context.Context, sel ast.SelectionSet, v []*db.Post) graphql.Marshaler {

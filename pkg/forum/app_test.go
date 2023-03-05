@@ -17,7 +17,7 @@ import (
 
 const (
 	TestPath = "127.0.0.1:9998"
-	TestGQL = "http://127.0.0.1:9998/query"
+	TestGQL  = "http://127.0.0.1:9998/query"
 )
 
 var utoken string
@@ -29,7 +29,6 @@ gql request looks like:
 {"query":"mutation {\n  createUser(input:{\n    loginName: \"thumuht\"\n    password: \"harmful\"\n  }) {\n    id\n    loginName\n  }\n}"}
 
 but we only need inside mutation..
-
 */
 func makeGQLRequest(gs string) *strings.Reader {
 	// DO NOT escape strings, RFC 7159 section #7
@@ -42,7 +41,6 @@ func makeGQLRequest(gs string) *strings.Reader {
 	return strings.NewReader(fmt.Sprintf(`{"query": %#v}`, gs))
 }
 
-
 /**
 utility. make gql requests with variable
 
@@ -52,8 +50,8 @@ TODO
 // 	return nil
 // }
 
-
-/**
+/*
+*
 utility. remove whitespaces for compare
 
 https://stackoverflow.com/questions/32081808/strip-all-whitespace-from-a-string
@@ -93,7 +91,8 @@ func SendAndGetGQL(req string, hdr map[string]string) (*string, error) {
 	return &newuserS, nil
 }
 
-/**
+/*
+*
 utility. send gql request & receive gql resp, and compare 'em
 */
 func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, error) {
@@ -104,8 +103,8 @@ func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, er
 		return false, err
 	}
 
-	*tresp = KillWhitespaces(*tresp) 
-	
+	*tresp = KillWhitespaces(*tresp)
+
 	println("Get Response\n", *tresp)
 
 	return strings.Compare(*tresp, resp) == 0, nil
@@ -115,7 +114,7 @@ func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, er
 // for now, run forum server is ok..
 func TestMain(m *testing.M) {
 	app := forum.NewForum()
-	
+
 	// launch app. use goroutine, because Run() will block.
 	go func() {
 		app.Run(TestPath)
@@ -134,7 +133,7 @@ func TestNewUser(t *testing.T) {
 			loginName
 		}
 	}`
-	
+
 	newuserResp := `{"data":{"createUser":{"id":1,"loginName":"thumuht"}}}`
 	if ok, err := SendAndCompareGQL(newuser, newuserResp, nil); ok == false {
 		t.Error(fmt.Errorf("cannot new user: %w", err))
@@ -176,7 +175,7 @@ func TestNewPost(t *testing.T) {
 		}
 	}`
 
-	hdrs := map[string]string {"Token": utoken}
+	hdrs := map[string]string{"Token": utoken}
 	newpostResp := `{"data":{
 		"createPost":
 		{"id": 1,
@@ -202,7 +201,7 @@ func TestNewComment(t *testing.T) {
 		}
 	}`
 
-	hdrs := map[string]string {"Token": utoken}
+	hdrs := map[string]string{"Token": utoken}
 	newcommentResp := `{"data":{
 		"createComment": {
 			"id": 1,
@@ -214,3 +213,92 @@ func TestNewComment(t *testing.T) {
 		t.Error(fmt.Errorf("cannot new comment: %w", err))
 	}
 }
+
+func NewPost(title string, content string) error {
+	newpost := `mutation {
+		createPost(input: {
+			userId: 1
+			title: "$1$"
+			content: "$2$"
+		}) {
+			id
+			title
+			content
+		}
+	}`
+	newpost = strings.Replace(
+		strings.Replace(newpost, "$1$", title, 1),
+		"$2$",
+		content,
+		1,
+	)
+
+	hdrs := map[string]string{"Token": utoken}
+	_, err := SendAndGetGQL(newpost, hdrs)
+	return err
+}
+
+func TestPostPaging(t *testing.T) {
+	alp := string("zxcvbnmlkjhgfdsapoiuytrewq")
+	for idx, cha := range alp {
+		err := NewPost(string(cha), fmt.Sprintf("%d", idx))
+		if err != nil {
+			t.Errorf("insert post failed")
+		}
+	}
+
+	queryPosts := `query{
+		posts(input: {
+			limit: 10
+			offset: 0
+			orderBy: title
+			order: ASC
+		}) {
+			title
+			content
+		}
+	}`
+
+	queryresp := `
+	{"data":{"posts":[{"title":"a","content":"15"},{"title":"b","content":"4"},
+	{"title":"c","content":"2"},{"title":"d","content":"13"},{"title":"e","content":"23"},
+	{"title":"f","content":"12"},{"title":"g","content":"11"},{"title":"go","content":"too good"},
+	{"title":"h","content":"10"},{"title":"i","content":"18"}]}}
+	`
+
+	resp, err := SendAndCompareGQL(queryPosts, queryresp, nil)
+	if err != nil {
+		t.Errorf("can not query")
+	}
+	if resp == false {
+		t.Errorf("incorrect order")
+	}
+
+	queryPosts = `query{
+		posts(input: {
+			limit: 10
+			offset: 0
+			orderBy: created_at
+			order: ASC
+		}) {
+			title
+			content
+		}
+	}`
+
+	queryresp = `
+	{"data":{"posts":[{"title":"go","content":"too good"},{"title":"z","content":"0"},
+	{"title":"x","content":"1"},{"title":"c","content":"2"},{"title":"v","content":"3"},
+	{"title":"b","content":"4"},{"title":"n","content":"5"},{"title":"m","content":"6"},
+	{"title":"l","content":"7"},{"title":"k","content":"8"}]}}
+	`
+
+	resp, err = SendAndCompareGQL(queryPosts, queryresp, nil)
+	if err != nil {
+		t.Errorf("can not query")
+	} else if resp == false {
+		t.Error("incorrect time result")
+	}
+}
+
+// TODO(wj): filesystem test

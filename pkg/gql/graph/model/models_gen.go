@@ -72,14 +72,14 @@ type UpdatePost struct {
 type CommentOrderBy string
 
 const (
-	CommentOrderByID        CommentOrderBy = "ID"
-	CommentOrderByContent   CommentOrderBy = "Content"
-	CommentOrderByCreatedAt CommentOrderBy = "CreatedAt"
-	CommentOrderByUpdatedAt CommentOrderBy = "UpdatedAt"
+	CommentOrderByCommentID CommentOrderBy = "comment_id"
+	CommentOrderByContent   CommentOrderBy = "content"
+	CommentOrderByCreatedAt CommentOrderBy = "created_at"
+	CommentOrderByUpdatedAt CommentOrderBy = "updated_at"
 )
 
 var AllCommentOrderBy = []CommentOrderBy{
-	CommentOrderByID,
+	CommentOrderByCommentID,
 	CommentOrderByContent,
 	CommentOrderByCreatedAt,
 	CommentOrderByUpdatedAt,
@@ -87,7 +87,7 @@ var AllCommentOrderBy = []CommentOrderBy{
 
 func (e CommentOrderBy) IsValid() bool {
 	switch e {
-	case CommentOrderByID, CommentOrderByContent, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
+	case CommentOrderByCommentID, CommentOrderByContent, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
 		return true
 	}
 	return false
@@ -158,16 +158,16 @@ func (e Order) MarshalGQL(w io.Writer) {
 type PostOrderBy string
 
 const (
-	PostOrderByID        PostOrderBy = "ID"
-	PostOrderByTitle     PostOrderBy = "Title"
-	PostOrderByContent   PostOrderBy = "Content"
-	PostOrderByUserID    PostOrderBy = "UserID"
-	PostOrderByCreatedAt PostOrderBy = "CreatedAt"
-	PostOrderByUpdatedAt PostOrderBy = "UpdatedAt"
+	PostOrderByPostID    PostOrderBy = "post_id"
+	PostOrderByTitle     PostOrderBy = "title"
+	PostOrderByContent   PostOrderBy = "content"
+	PostOrderByUserID    PostOrderBy = "userId"
+	PostOrderByCreatedAt PostOrderBy = "created_at"
+	PostOrderByUpdatedAt PostOrderBy = "updated_at"
 )
 
 var AllPostOrderBy = []PostOrderBy{
-	PostOrderByID,
+	PostOrderByPostID,
 	PostOrderByTitle,
 	PostOrderByContent,
 	PostOrderByUserID,
@@ -177,7 +177,7 @@ var AllPostOrderBy = []PostOrderBy{
 
 func (e PostOrderBy) IsValid() bool {
 	switch e {
-	case PostOrderByID, PostOrderByTitle, PostOrderByContent, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
+	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
 		return true
 	}
 	return false
@@ -207,18 +207,18 @@ func (e PostOrderBy) MarshalGQL(w io.Writer) {
 type UserOrderBy string
 
 const (
-	UserOrderByID       UserOrderBy = "ID"
-	UserOrderByNickname UserOrderBy = "Nickname"
+	UserOrderByUserID   UserOrderBy = "user_id"
+	UserOrderByNickname UserOrderBy = "nickname"
 )
 
 var AllUserOrderBy = []UserOrderBy{
-	UserOrderByID,
+	UserOrderByUserID,
 	UserOrderByNickname,
 }
 
 func (e UserOrderBy) IsValid() bool {
 	switch e {
-	case UserOrderByID, UserOrderByNickname:
+	case UserOrderByUserID, UserOrderByNickname:
 		return true
 	}
 	return false
