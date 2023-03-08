@@ -1,8 +1,14 @@
+/*
+Package db defines model of thumuht, and sets up the database.
+
+TODO(wj, mid): add more test cases
+*/
 package db
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
@@ -10,6 +16,9 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 )
 
+// init SQLiteDB for debug/test purpose only
+// 'cause it stores its data on memory, and is volatile
+// therefore, it's convinent for testing, but unacceptable in real use.
 func InitSQLiteDB() (*bun.DB, error) {
 	sqldb, err := sql.Open(sqliteshim.ShimName, "file::memory:?cache=shared")
 	if err != nil {
@@ -25,6 +34,15 @@ func InitSQLiteDB() (*bun.DB, error) {
 	return db, err
 }
 
+// init postgres db for production perpose
+// TODO(wj, important, low): fill this function
+// TODO(wj, low): migration
+func InitPGDB() (*bun.DB, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+// init database models
+// should be database agnostic
 func InitModels(db *bun.DB) error {
 	ctx := context.Background()
 	_, err := db.NewCreateTable().Model((*User)(nil)).Exec(ctx)
@@ -68,3 +86,4 @@ func (*Attachment) BeforeCreateTable(ctx context.Context, query *bun.CreateTable
 
 // why primary key not working?
 // cos sqlite needs PRAGMA foreign_keys = ON;
+// TODO(wj, mid): add index to speed up query
