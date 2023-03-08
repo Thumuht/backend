@@ -19,10 +19,10 @@ import (
 )
 
 type App struct {
-	*gin.Engine 										// router
-	DB       *bun.DB                // db instance
-	Sessions map[string]string      // user sessions. login status. TODO(wj, mid): use Redis!
-	GQL      *handler.Server				// gql server
+	*gin.Engine                   // router
+	DB          *bun.DB           // db instance
+	Sessions    map[string]string // user sessions. login status. TODO(wj, mid): use Redis!
+	GQL         *handler.Server   // gql server
 }
 
 // TODO(wj, low): differ its behavior in accordance with Config..
@@ -81,6 +81,7 @@ func SetRouter(app *App) {
 	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
 }
 
+// Run Forum. BLOCK!!
 func (app *App) RunForum(addr string) {
 	app.Run(addr)
 }

@@ -6,20 +6,21 @@ eXecutable programs for thumuht
 provides http backend server for thumuht
 
 Usage:
+
 	main
 
 Configuration:
 
-The program need a config.yml file in the working directory to run properly.	
+The program need a config.yml file in the working directory to run properly.
 Settings below are required.
 
 fs_route
+
 	directory where saves user-upload files
 
 addr
-	socket addr where serves the service
-	
 
+	socket addr where serves the service
 */
 package main
 

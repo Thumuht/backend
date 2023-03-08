@@ -2,7 +2,6 @@
 Package router provides http handlers for thumuht app instance.
 
 thumuht app registers these handlers.
-
 */
 package router
 
