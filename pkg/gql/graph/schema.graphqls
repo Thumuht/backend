@@ -38,6 +38,8 @@ type Post @goModel(
   id: Int!
   title: String
   content: String
+  view: Int
+  like: Int
   createdAt: Time
   updatedAt: Time
 
@@ -50,6 +52,7 @@ type Comment @goModel(
 ){
   id: Int!
   content: String
+  like: Int
   createdAt: Time
   updatedAt: Time
   
@@ -97,6 +100,8 @@ type Mutation {
 
   updatePost(input: UpdatePost!): Post!                  @login
   updateComment(input: UpdateComment!): Comment!         @login
+  likePost(input: Int!): Boolean!                        @login
+  likeComment(input: Int!): Boolean!                     @login
 }
 
 enum UserOrderBy {
@@ -108,6 +113,8 @@ enum PostOrderBy {
   post_id
   title
   content
+  view
+  like
   userId
   created_at
   updated_at
@@ -116,6 +123,7 @@ enum PostOrderBy {
 enum CommentOrderBy {
   comment_id
   content
+  like
   created_at
   updated_at
 }
@@ -150,5 +158,6 @@ input GetCommentInput {
 type Query {
   users(input: GetUserInput!): [User!]!
   posts(input: GetPostInput!): [Post!]!
+  postDetail(input: Int!): Post!
   comment(input: GetCommentInput!): [Comment!]!
 }

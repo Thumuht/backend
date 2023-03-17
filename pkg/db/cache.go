@@ -2,7 +2,8 @@ package db
 
 import (
 	"fmt"
-	"log"
+	"strings"
+	"sync"
 
 	"github.com/uptrace/bun"
 )
@@ -14,24 +15,24 @@ type Cache[K comparable, V any] interface {
 	Get(key K) (*V, bool)
 	Remove(key K) error
 	Set(key K, value V) error
-	SetFlushTarget(table, keycol, valcol string, pdb bun.DB)
+	SetFlushTarget(table, keycol, valcol string, pdb *bun.DB)
 	Flush() error
-	Invalidate() error
+	Invalidate(flush bool) error
 }
-
-// cache group manages all cache
-type CacheGroup map[string]any // any must be a cache!!
 
 // IN MEMORY MAP CACHE
 type MapCache[K comparable, V any] struct {
-	c      map[K]V
-	table  string
-	keycol string
-	valcol string
-	pdb    bun.DB // persistant storage db
+	c            map[K]V
+	table        string
+	keycol       string
+	valcol       string
+	pdb          *bun.DB // persistant storage db
+	sync.RWMutex         // Read-Write lock. Must Get it before r/w global state.
 }
 
 func (mc *MapCache[K, V]) Get(key K) (*V, bool) {
+	mc.RLock()
+	defer mc.RUnlock()
 	value, ok := mc.c[key]
 	if !ok {
 		return nil, false
@@ -40,16 +41,22 @@ func (mc *MapCache[K, V]) Get(key K) (*V, bool) {
 }
 
 func (mc *MapCache[K, V]) Remove(key K) error {
+	mc.Lock()
+	defer mc.Unlock()
 	delete(mc.c, key)
 	return nil
 }
 
 func (mc *MapCache[K, V]) Set(key K, value V) error {
+	mc.Lock()
+	defer mc.Unlock()
 	mc.c[key] = value
 	return nil
 }
 
-func (mc *MapCache[K, V]) SetFlushTarget(table, keycol, valcol string, pdb bun.DB) {
+func (mc *MapCache[K, V]) SetFlushTarget(table, keycol, valcol string, pdb *bun.DB) {
+	mc.Lock()
+	defer mc.Unlock()
 	mc.table = table
 	mc.keycol = keycol
 	mc.valcol = valcol
@@ -57,17 +64,11 @@ func (mc *MapCache[K, V]) SetFlushTarget(table, keycol, valcol string, pdb bun.D
 }
 
 func (mc *MapCache[K, V]) Flush() error {
-	stat := fmt.Sprintf(`WITH _data (%s, %s) AS (
-		VALUES
-%s
-	)
-	UPDATE %s
-	SET %s = _data.%s
-	FROM _data
-	WHERE %s.%s = _data.%s;
-	`, mc.keycol, mc.valcol, mc.String(), mc.table, mc.valcol, mc.valcol, mc.table, mc.keycol, mc.keycol)
+	stat := fmt.Sprintf(`
+	REPLACE INTO %s (%s, %s)
+	VALUES %s;
+	`, mc.table, mc.keycol, mc.valcol, mc.String())
 
-	log.Println(stat)
 	_, err := mc.pdb.Exec(stat)
 	if err != nil {
 		return err
@@ -76,14 +77,21 @@ func (mc *MapCache[K, V]) Flush() error {
 }
 
 func (mc *MapCache[K, V]) String() string {
-	var s string
+	mc.RLock()
+	defer mc.RUnlock()
+	var s []string
 	for k, v := range mc.c {
-		s += fmt.Sprintf("('%#v', '%#v')\n", k, v)
+		s = append(s, fmt.Sprintf("('%#v', '%#v')", k, v))
 	}
-	return s
+	return strings.Join(s, ",\n")
 }
 
-func (mc *MapCache[K, V]) Invalidate() error {
+func (mc *MapCache[K, V]) Invalidate(flush bool) error {
+	mc.Lock()
+	if flush {
+		defer mc.Flush()
+	}
+	defer mc.Unlock()
 	for k := range mc.c {
 		delete(mc.c, k)
 	}

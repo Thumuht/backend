@@ -26,6 +26,8 @@ type Post struct {
 	ID        int32     `json:"id" bun:"post_id,pk,autoincrement"`
 	Title     string    `json:"title" bun:"title"`
 	Content   string    `json:"content" bun:"content"`
+	View      int32     `json:"view" bun:"view"`
+	Like      int32     `json:"like" bun:"like"`
 	UserID    int32     `json:"userId" bun:"post_userid"`
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
@@ -40,6 +42,7 @@ type Comment struct {
 
 	ID        int32     `json:"id" bun:"comment_id,pk,autoincrement"`
 	Content   string    `json:"content" bun:"content"`
+	Like      int32     `json:"like" bun:"like"`
 	UserID    int32     `json:"userId" bun:"comment_userid"`
 	PostID    int32     `json:"postId" bun:"comment_postid"`
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`

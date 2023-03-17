@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -56,6 +57,7 @@ type ComplexityRoot struct {
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Like      func(childComplexity int) int
 		Post      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
@@ -69,7 +71,10 @@ type ComplexityRoot struct {
 		DeletePost    func(childComplexity int, input int) int
 		DeleteUser    func(childComplexity int, input int) int
 		FileUpload    func(childComplexity int, input *model.PostUpload) int
+		LikeComment   func(childComplexity int, input int) int
+		LikePost      func(childComplexity int, input int) int
 		Login         func(childComplexity int, input model.LoginSession) int
+		Logout        func(childComplexity int) int
 		UpdateComment func(childComplexity int, input model.UpdateComment) int
 		UpdatePost    func(childComplexity int, input model.UpdatePost) int
 	}
@@ -79,15 +84,18 @@ type ComplexityRoot struct {
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Like      func(childComplexity int) int
 		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		User      func(childComplexity int) int
+		View      func(childComplexity int) int
 	}
 
 	Query struct {
-		Comment func(childComplexity int, input model.GetCommentInput) int
-		Posts   func(childComplexity int, input model.GetPostInput) int
-		Users   func(childComplexity int, input model.GetUserInput) int
+		Comment    func(childComplexity int, input model.GetCommentInput) int
+		PostDetail func(childComplexity int, input int) int
+		Posts      func(childComplexity int, input model.GetPostInput) int
+		Users      func(childComplexity int, input model.GetUserInput) int
 	}
 
 	User struct {
@@ -111,12 +119,16 @@ type MutationResolver interface {
 	DeleteComment(ctx context.Context, input int) (bool, error)
 	UpdatePost(ctx context.Context, input model.UpdatePost) (*db.Post, error)
 	UpdateComment(ctx context.Context, input model.UpdateComment) (*db.Comment, error)
+	LikePost(ctx context.Context, input int) (bool, error)
+	LikeComment(ctx context.Context, input int) (bool, error)
 	FileUpload(ctx context.Context, input *model.PostUpload) (bool, error)
 	Login(ctx context.Context, input model.LoginSession) (string, error)
+	Logout(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
 	Users(ctx context.Context, input model.GetUserInput) ([]db.User, error)
 	Posts(ctx context.Context, input model.GetPostInput) ([]db.Post, error)
+	PostDetail(ctx context.Context, input int) (*db.Post, error)
 	Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error)
 }
 
@@ -169,6 +181,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Comment.ID(childComplexity), true
+
+	case "Comment.like":
+		if e.complexity.Comment.Like == nil {
+			break
+		}
+
+		return e.complexity.Comment.Like(childComplexity), true
 
 	case "Comment.post":
 		if e.complexity.Comment.Post == nil {
@@ -275,6 +294,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.FileUpload(childComplexity, args["input"].(*model.PostUpload)), true
 
+	case "Mutation.likeComment":
+		if e.complexity.Mutation.LikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikeComment(childComplexity, args["input"].(int)), true
+
+	case "Mutation.likePost":
+		if e.complexity.Mutation.LikePost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likePost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikePost(childComplexity, args["input"].(int)), true
+
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -286,6 +329,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.LoginSession)), true
+
+	case "Mutation.logout":
+		if e.complexity.Mutation.Logout == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Logout(childComplexity), true
 
 	case "Mutation.updateComment":
 		if e.complexity.Mutation.UpdateComment == nil {
@@ -339,6 +389,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.ID(childComplexity), true
 
+	case "Post.like":
+		if e.complexity.Post.Like == nil {
+			break
+		}
+
+		return e.complexity.Post.Like(childComplexity), true
+
 	case "Post.title":
 		if e.complexity.Post.Title == nil {
 			break
@@ -360,6 +417,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.User(childComplexity), true
 
+	case "Post.view":
+		if e.complexity.Post.View == nil {
+			break
+		}
+
+		return e.complexity.Post.View(childComplexity), true
+
 	case "Query.comment":
 		if e.complexity.Query.Comment == nil {
 			break
@@ -371,6 +435,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Comment(childComplexity, args["input"].(model.GetCommentInput)), true
+
+	case "Query.postDetail":
+		if e.complexity.Query.PostDetail == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postDetail_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostDetail(childComplexity, args["input"].(int)), true
 
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
@@ -656,6 +732,36 @@ func (ec *executionContext) field_Mutation_fileUpload_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_likeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -723,6 +829,21 @@ func (ec *executionContext) field_Query_comment_args(ctx context.Context, rawArg
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNGetCommentInput2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐGetCommentInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_postDetail_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -972,6 +1093,47 @@ func (ec *executionContext) fieldContext_Comment_content(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Comment_like(ctx context.Context, field graphql.CollectedField, obj *db.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_like(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Like, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalOInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Comment_like(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Comment_createdAt(ctx context.Context, field graphql.CollectedField, obj *db.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_createdAt(ctx, field)
 	if err != nil {
@@ -1155,6 +1317,10 @@ func (ec *executionContext) fieldContext_Comment_post(ctx context.Context, field
 				return ec.fieldContext_Post_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -1188,6 +1354,7 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1280,6 +1447,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1306,6 +1474,10 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_Post_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -1370,6 +1542,7 @@ func (ec *executionContext) _Mutation_createComment(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1394,6 +1567,8 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "like":
+				return ec.fieldContext_Comment_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Comment_createdAt(ctx, field)
 			case "updatedAt":
@@ -1458,6 +1633,7 @@ func (ec *executionContext) _Mutation_deleteUser(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1532,6 +1708,7 @@ func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1606,6 +1783,7 @@ func (ec *executionContext) _Mutation_deleteComment(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1680,6 +1858,7 @@ func (ec *executionContext) _Mutation_updatePost(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1706,6 +1885,10 @@ func (ec *executionContext) fieldContext_Mutation_updatePost(ctx context.Context
 				return ec.fieldContext_Post_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -1770,6 +1953,7 @@ func (ec *executionContext) _Mutation_updateComment(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1794,6 +1978,8 @@ func (ec *executionContext) fieldContext_Mutation_updateComment(ctx context.Cont
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "like":
+				return ec.fieldContext_Comment_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Comment_createdAt(ctx, field)
 			case "updatedAt":
@@ -1814,6 +2000,156 @@ func (ec *executionContext) fieldContext_Mutation_updateComment(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_likePost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().LikePost(rctx, fc.Args["input"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_likePost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_likePost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_likeComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().LikeComment(rctx, fc.Args["input"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_likeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -1858,6 +2194,7 @@ func (ec *executionContext) _Mutation_fileUpload(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1912,6 +2249,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1944,6 +2282,70 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 	if fc.Args, err = ec.field_Mutation_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_logout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().Logout(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_logout(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -2069,6 +2471,88 @@ func (ec *executionContext) fieldContext_Post_content(ctx context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Post_view(ctx context.Context, field graphql.CollectedField, obj *db.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_view(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.View, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalOInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_view(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Post_like(ctx context.Context, field graphql.CollectedField, obj *db.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_like(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Like, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalOInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_like(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2255,6 +2739,8 @@ func (ec *executionContext) fieldContext_Post_comment(ctx context.Context, field
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "like":
+				return ec.fieldContext_Comment_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Comment_createdAt(ctx, field)
 			case "updatedAt":
@@ -2288,6 +2774,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -2360,6 +2847,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -2386,6 +2874,10 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 				return ec.fieldContext_Post_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -2412,6 +2904,81 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_postDetail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_postDetail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostDetail(rctx, fc.Args["input"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*db.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚖbackendᚋpkgᚋdbᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_postDetail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Post_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Post_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Post_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
+			case "comment":
+				return ec.fieldContext_Post_comment(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_postDetail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_comment(ctx, field)
 	if err != nil {
@@ -2430,6 +2997,7 @@ func (ec *executionContext) _Query_comment(ctx context.Context, field graphql.Co
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -2454,6 +3022,8 @@ func (ec *executionContext) fieldContext_Query_comment(ctx context.Context, fiel
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "like":
+				return ec.fieldContext_Comment_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Comment_createdAt(ctx, field)
 			case "updatedAt":
@@ -2498,6 +3068,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -2571,6 +3142,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	})
 	if err != nil {
 		ec.Error(ctx, err)
+		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -2901,6 +3473,10 @@ func (ec *executionContext) fieldContext_User_post(ctx context.Context, field gr
 				return ec.fieldContext_Post_title(ctx, field)
 			case "content":
 				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Post_createdAt(ctx, field)
 			case "updatedAt":
@@ -2956,6 +3532,8 @@ func (ec *executionContext) fieldContext_User_comment(ctx context.Context, field
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
+			case "like":
+				return ec.fieldContext_Comment_like(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Comment_createdAt(ctx, field)
 			case "updatedAt":
@@ -5279,6 +5857,10 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = ec._Comment_content(ctx, field, obj)
 
+		case "like":
+
+			out.Values[i] = ec._Comment_like(ctx, field, obj)
+
 		case "createdAt":
 
 			out.Values[i] = ec._Comment_createdAt(ctx, field, obj)
@@ -5315,6 +5897,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	})
 
 	out := graphql.NewFieldSet(fields)
+	var invalids uint32
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -5330,65 +5913,125 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createUser(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createPost":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createPost(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createComment":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createComment(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteUser":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteUser(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deletePost":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deletePost(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteComment":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteComment(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updatePost":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updatePost(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "updateComment":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateComment(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likePost":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_likePost(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeComment":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_likeComment(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "fileUpload":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_fileUpload(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "login":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_login(ctx, field)
 			})
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logout":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_logout(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
 	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
 	return out
 }
 
@@ -5416,6 +6059,14 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 		case "content":
 
 			out.Values[i] = ec._Post_content(ctx, field, obj)
+
+		case "view":
+
+			out.Values[i] = ec._Post_view(ctx, field, obj)
+
+		case "like":
+
+			out.Values[i] = ec._Post_like(ctx, field, obj)
 
 		case "createdAt":
 
@@ -5453,6 +6104,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	})
 
 	out := graphql.NewFieldSet(fields)
+	var invalids uint32
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -5472,6 +6124,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_users(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -5492,6 +6147,32 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_posts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "postDetail":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postDetail(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -5512,6 +6193,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_comment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			}
 
@@ -5539,6 +6223,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		}
 	}
 	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
 	return out
 }
 
@@ -6578,6 +7265,16 @@ func (ec *executionContext) marshalOComment2ᚖbackendᚋpkgᚋdbᚐComment(ctx 
 		return graphql.Null
 	}
 	return ec._Comment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2int32(ctx context.Context, v interface{}) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	res := graphql.MarshalInt32(v)
+	return res
 }
 
 func (ec *executionContext) marshalOPost2ᚕᚖbackendᚋpkgᚋdbᚐPost(ctx context.Context, sel ast.SelectionSet, v []*db.Post) graphql.Marshaler {

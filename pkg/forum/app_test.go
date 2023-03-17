@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"unicode"
 )
@@ -21,6 +22,7 @@ const (
 )
 
 var utoken string
+var app *forum.App
 
 /*
 utility. make graphql requests
@@ -94,6 +96,7 @@ func SendAndGetGQL(req string, hdr map[string]string) (*string, error) {
 /*
 *
 utility. send gql request & receive gql resp, and compare 'em
+return true if ok
 */
 func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, error) {
 	resp = KillWhitespaces(resp)
@@ -113,7 +116,7 @@ func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, er
 // set up test environment.
 // for now, run forum server is ok..
 func TestMain(m *testing.M) {
-	app := forum.NewForum()
+	app = forum.NewForum()
 
 	// launch app. use goroutine, because Run() will block.
 	go func() {
@@ -301,4 +304,66 @@ func TestPostPaging(t *testing.T) {
 	}
 }
 
+func TestCache(t *testing.T) {
+	browse := `mutation {
+		likePost(input: 1)
+	}`
+
+	getlike := `query {
+		postDetail(input: 1) {
+			like
+		}
+	}`
+
+	hdrs := map[string]string{"Token": utoken}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 20000; i++ {
+		wg.Add(1)
+		// i must be in parameter
+		go func() {
+			defer wg.Done()
+			_, _ = SendAndGetGQL(browse, hdrs)
+		}()
+	}
+
+	wg.Wait()
+
+	app.Cache.PostLike.Flush()
+	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":20000}}}`, nil)
+	if err != nil || !ok {
+		t.Error("testcache failed")
+	}
+}
+
 // TODO(wj): filesystem test
+
+// Test @login API before THIS
+func TestLogout(t *testing.T) {
+	logout := `mutation {
+		logout
+	}`
+
+	hdrs := map[string]string{"Token": utoken}
+	ok, err := SendAndCompareGQL(logout, `{"data":{"logout":true}}`, hdrs)
+	if err != nil || !ok {
+		t.Error("cannot send gql")
+	}
+
+	np := `mutation {
+		createPost(input: {
+			userId: 1
+			title: "go"
+			content: "too good"
+		}) {
+			id
+			title
+			content
+		}
+	}`
+	ok, err = SendAndCompareGQL(np, fmt.Sprintf(`{"errors":[{"message":"no token %s access denied","path":["createPost"]}],"data":null}`, utoken), hdrs)
+	if err != nil || !ok {
+		t.Error("cannot get gql")
+	}
+
+}

@@ -74,6 +74,7 @@ type CommentOrderBy string
 const (
 	CommentOrderByCommentID CommentOrderBy = "comment_id"
 	CommentOrderByContent   CommentOrderBy = "content"
+	CommentOrderByLike      CommentOrderBy = "like"
 	CommentOrderByCreatedAt CommentOrderBy = "created_at"
 	CommentOrderByUpdatedAt CommentOrderBy = "updated_at"
 )
@@ -81,13 +82,14 @@ const (
 var AllCommentOrderBy = []CommentOrderBy{
 	CommentOrderByCommentID,
 	CommentOrderByContent,
+	CommentOrderByLike,
 	CommentOrderByCreatedAt,
 	CommentOrderByUpdatedAt,
 }
 
 func (e CommentOrderBy) IsValid() bool {
 	switch e {
-	case CommentOrderByCommentID, CommentOrderByContent, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
+	case CommentOrderByCommentID, CommentOrderByContent, CommentOrderByLike, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
 		return true
 	}
 	return false
@@ -161,6 +163,8 @@ const (
 	PostOrderByPostID    PostOrderBy = "post_id"
 	PostOrderByTitle     PostOrderBy = "title"
 	PostOrderByContent   PostOrderBy = "content"
+	PostOrderByView      PostOrderBy = "view"
+	PostOrderByLike      PostOrderBy = "like"
 	PostOrderByUserID    PostOrderBy = "userId"
 	PostOrderByCreatedAt PostOrderBy = "created_at"
 	PostOrderByUpdatedAt PostOrderBy = "updated_at"
@@ -170,6 +174,8 @@ var AllPostOrderBy = []PostOrderBy{
 	PostOrderByPostID,
 	PostOrderByTitle,
 	PostOrderByContent,
+	PostOrderByView,
+	PostOrderByLike,
 	PostOrderByUserID,
 	PostOrderByCreatedAt,
 	PostOrderByUpdatedAt,
@@ -177,7 +183,7 @@ var AllPostOrderBy = []PostOrderBy{
 
 func (e PostOrderBy) IsValid() bool {
 	switch e {
-	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
+	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByView, PostOrderByLike, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
 		return true
 	}
 	return false
