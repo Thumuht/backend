@@ -45,6 +45,7 @@ type Post @goModel(
 
   user: User
   comment: [Comment]
+  attachment: [Attachment]
 }
 
 type Comment @goModel(
@@ -58,6 +59,7 @@ type Comment @goModel(
   
   user: User
   post: Post
+  attachment: [Attachment]
 }
 
 

@@ -1,15 +1,22 @@
 scalar Upload
 
+enum AttachmentParent {
+  post
+  comment
+}
+
 type Attachment @goModel(
   model: "backend/pkg/db.Attachment"
 ){
-  postId: Int!
+  parentId: Int!
+  parentType: AttachmentParent!
   fileName: String!
 }
 
 input PostUpload {
   upload: Upload!
-  postId: Int!
+  parentId: Int!
+  parentType: AttachmentParent!
 }
 
 extend type Mutation {

@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Attachment() AttachmentResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -49,18 +50,20 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Attachment struct {
-		FileName func(childComplexity int) int
-		PostID   func(childComplexity int) int
+		FileName   func(childComplexity int) int
+		ParentID   func(childComplexity int) int
+		ParentType func(childComplexity int) int
 	}
 
 	Comment struct {
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Like      func(childComplexity int) int
-		Post      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		User      func(childComplexity int) int
+		Attachment func(childComplexity int) int
+		Content    func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Like       func(childComplexity int) int
+		Post       func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+		User       func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -80,15 +83,16 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Comment   func(childComplexity int) int
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Like      func(childComplexity int) int
-		Title     func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		User      func(childComplexity int) int
-		View      func(childComplexity int) int
+		Attachment func(childComplexity int) int
+		Comment    func(childComplexity int) int
+		Content    func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Like       func(childComplexity int) int
+		Title      func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+		User       func(childComplexity int) int
+		View       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -110,6 +114,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type AttachmentResolver interface {
+	ParentType(ctx context.Context, obj *db.Attachment) (model.AttachmentParent, error)
+}
 type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.NewUser) (*db.User, error)
 	CreatePost(ctx context.Context, input model.NewPost) (*db.Post, error)
@@ -154,12 +161,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Attachment.FileName(childComplexity), true
 
-	case "Attachment.postId":
-		if e.complexity.Attachment.PostID == nil {
+	case "Attachment.parentId":
+		if e.complexity.Attachment.ParentID == nil {
 			break
 		}
 
-		return e.complexity.Attachment.PostID(childComplexity), true
+		return e.complexity.Attachment.ParentID(childComplexity), true
+
+	case "Attachment.parentType":
+		if e.complexity.Attachment.ParentType == nil {
+			break
+		}
+
+		return e.complexity.Attachment.ParentType(childComplexity), true
+
+	case "Comment.attachment":
+		if e.complexity.Comment.Attachment == nil {
+			break
+		}
+
+		return e.complexity.Comment.Attachment(childComplexity), true
 
 	case "Comment.content":
 		if e.complexity.Comment.Content == nil {
@@ -360,6 +381,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdatePost(childComplexity, args["input"].(model.UpdatePost)), true
+
+	case "Post.attachment":
+		if e.complexity.Post.Attachment == nil {
+			break
+		}
+
+		return e.complexity.Post.Attachment(childComplexity), true
 
 	case "Post.comment":
 		if e.complexity.Post.Comment == nil {
@@ -920,8 +948,8 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Attachment_postId(ctx context.Context, field graphql.CollectedField, obj *db.Attachment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Attachment_postId(ctx, field)
+func (ec *executionContext) _Attachment_parentId(ctx context.Context, field graphql.CollectedField, obj *db.Attachment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attachment_parentId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -934,7 +962,7 @@ func (ec *executionContext) _Attachment_postId(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PostID, nil
+		return obj.ParentID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -951,7 +979,7 @@ func (ec *executionContext) _Attachment_postId(ctx context.Context, field graphq
 	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Attachment_postId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Attachment_parentId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Attachment",
 		Field:      field,
@@ -959,6 +987,50 @@ func (ec *executionContext) fieldContext_Attachment_postId(ctx context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Attachment_parentType(ctx context.Context, field graphql.CollectedField, obj *db.Attachment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Attachment_parentType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Attachment().ParentType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.AttachmentParent)
+	fc.Result = res
+	return ec.marshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Attachment_parentType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Attachment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AttachmentParent does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1329,8 +1401,59 @@ func (ec *executionContext) fieldContext_Comment_post(ctx context.Context, field
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Comment_attachment(ctx context.Context, field graphql.CollectedField, obj *db.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_attachment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attachment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*db.Attachment)
+	fc.Result = res
+	return ec.marshalOAttachment2ᚕᚖbackendᚋpkgᚋdbᚐAttachment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Comment_attachment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "parentId":
+				return ec.fieldContext_Attachment_parentId(ctx, field)
+			case "parentType":
+				return ec.fieldContext_Attachment_parentType(ctx, field)
+			case "fileName":
+				return ec.fieldContext_Attachment_fileName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Attachment", field.Name)
 		},
 	}
 	return fc, nil
@@ -1486,6 +1609,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -1577,6 +1702,8 @@ func (ec *executionContext) fieldContext_Mutation_createComment(ctx context.Cont
 				return ec.fieldContext_Comment_user(ctx, field)
 			case "post":
 				return ec.fieldContext_Comment_post(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Comment_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -1897,6 +2024,8 @@ func (ec *executionContext) fieldContext_Mutation_updatePost(ctx context.Context
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -1988,6 +2117,8 @@ func (ec *executionContext) fieldContext_Mutation_updateComment(ctx context.Cont
 				return ec.fieldContext_Comment_user(ctx, field)
 			case "post":
 				return ec.fieldContext_Comment_post(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Comment_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -2749,8 +2880,59 @@ func (ec *executionContext) fieldContext_Post_comment(ctx context.Context, field
 				return ec.fieldContext_Comment_user(ctx, field)
 			case "post":
 				return ec.fieldContext_Comment_post(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Comment_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Post_attachment(ctx context.Context, field graphql.CollectedField, obj *db.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_attachment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attachment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*db.Attachment)
+	fc.Result = res
+	return ec.marshalOAttachment2ᚕᚖbackendᚋpkgᚋdbᚐAttachment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_attachment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "parentId":
+				return ec.fieldContext_Attachment_parentId(ctx, field)
+			case "parentType":
+				return ec.fieldContext_Attachment_parentType(ctx, field)
+			case "fileName":
+				return ec.fieldContext_Attachment_fileName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Attachment", field.Name)
 		},
 	}
 	return fc, nil
@@ -2886,6 +3068,8 @@ func (ec *executionContext) fieldContext_Query_posts(ctx context.Context, field 
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -2961,6 +3145,8 @@ func (ec *executionContext) fieldContext_Query_postDetail(ctx context.Context, f
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -3032,6 +3218,8 @@ func (ec *executionContext) fieldContext_Query_comment(ctx context.Context, fiel
 				return ec.fieldContext_Comment_user(ctx, field)
 			case "post":
 				return ec.fieldContext_Comment_post(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Comment_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -3485,6 +3673,8 @@ func (ec *executionContext) fieldContext_User_post(ctx context.Context, field gr
 				return ec.fieldContext_Post_user(ctx, field)
 			case "comment":
 				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -3542,6 +3732,8 @@ func (ec *executionContext) fieldContext_User_comment(ctx context.Context, field
 				return ec.fieldContext_Comment_user(ctx, field)
 			case "post":
 				return ec.fieldContext_Comment_post(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Comment_attachment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
@@ -5684,7 +5876,7 @@ func (ec *executionContext) unmarshalInputPostUpload(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"upload", "postId"}
+	fieldsInOrder := [...]string{"upload", "parentId", "parentType"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5699,11 +5891,19 @@ func (ec *executionContext) unmarshalInputPostUpload(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-		case "postId":
+		case "parentId":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
-			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentId"))
+			it.ParentID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "parentType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentType"))
+			it.ParentType, err = ec.unmarshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5811,19 +6011,39 @@ func (ec *executionContext) _Attachment(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Attachment")
-		case "postId":
+		case "parentId":
 
-			out.Values[i] = ec._Attachment_postId(ctx, field, obj)
+			out.Values[i] = ec._Attachment_parentId(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "parentType":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Attachment_parentType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "fileName":
 
 			out.Values[i] = ec._Attachment_fileName(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5876,6 +6096,10 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 		case "post":
 
 			out.Values[i] = ec._Comment_post(ctx, field, obj)
+
+		case "attachment":
+
+			out.Values[i] = ec._Comment_attachment(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6083,6 +6307,10 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 		case "comment":
 
 			out.Values[i] = ec._Post_comment(ctx, field, obj)
+
+		case "attachment":
+
+			out.Values[i] = ec._Post_attachment(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6605,6 +6833,16 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx context.Context, v interface{}) (model.AttachmentParent, error) {
+	var res model.AttachmentParent
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx context.Context, sel ast.SelectionSet, v model.AttachmentParent) graphql.Marshaler {
+	return v
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
@@ -7191,6 +7429,54 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOAttachment2ᚕᚖbackendᚋpkgᚋdbᚐAttachment(ctx context.Context, sel ast.SelectionSet, v []*db.Attachment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOAttachment2ᚖbackendᚋpkgᚋdbᚐAttachment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOAttachment2ᚖbackendᚋpkgᚋdbᚐAttachment(ctx context.Context, sel ast.SelectionSet, v *db.Attachment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Attachment(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

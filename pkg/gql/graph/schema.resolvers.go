@@ -186,7 +186,7 @@ func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]db.Post, error) {
 	var posts []db.Post
-	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").
+	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).Scan(ctx)
 
@@ -214,7 +214,7 @@ func (r *queryResolver) PostDetail(ctx context.Context, input int) (*db.Post, er
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 
-	err := r.DB.NewSelect().Model(&post).Relation("Comment").Where("post_id = ?", input).Scan(ctx)
+	err := r.DB.NewSelect().Model(&post).Relation("Comment").Relation("Attachment").Relation("User").Where("post_id = ?", input).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func (r *queryResolver) PostDetail(ctx context.Context, input int) (*db.Post, er
 // Comment is the resolver for the comment field.
 func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error) {
 	var comments []db.Comment
-	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").
+	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").Relation("Attachment").
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).Scan(ctx)
 	if err != nil {

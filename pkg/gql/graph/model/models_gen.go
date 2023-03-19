@@ -54,8 +54,9 @@ type NewUser struct {
 }
 
 type PostUpload struct {
-	Upload graphql.Upload `json:"upload"`
-	PostID int            `json:"postId"`
+	Upload     graphql.Upload   `json:"upload"`
+	ParentID   int              `json:"parentId"`
+	ParentType AttachmentParent `json:"parentType"`
 }
 
 type UpdateComment struct {
@@ -67,6 +68,47 @@ type UpdatePost struct {
 	PostID  int     `json:"postId"`
 	Title   *string `json:"title"`
 	Content *string `json:"content"`
+}
+
+type AttachmentParent string
+
+const (
+	AttachmentParentPost    AttachmentParent = "post"
+	AttachmentParentComment AttachmentParent = "comment"
+)
+
+var AllAttachmentParent = []AttachmentParent{
+	AttachmentParentPost,
+	AttachmentParentComment,
+}
+
+func (e AttachmentParent) IsValid() bool {
+	switch e {
+	case AttachmentParentPost, AttachmentParentComment:
+		return true
+	}
+	return false
+}
+
+func (e AttachmentParent) String() string {
+	return string(e)
+}
+
+func (e *AttachmentParent) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AttachmentParent(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AttachmentParent", str)
+	}
+	return nil
+}
+
+func (e AttachmentParent) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type CommentOrderBy string

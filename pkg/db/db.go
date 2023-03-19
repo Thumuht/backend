@@ -79,11 +79,6 @@ func (*Comment) BeforeCreateTable(ctx context.Context, query *bun.CreateTableQue
 	return nil
 }
 
-func (*Attachment) BeforeCreateTable(ctx context.Context, query *bun.CreateTableQuery) error {
-	query.ForeignKey(`("attachment_postid") REFERENCES "post" ("post_id") ON DELETE CASCADE`)
-	return nil
-}
-
 // why primary key not working?
 // cos sqlite needs PRAGMA foreign_keys = ON;
 // TODO(wj, mid): add index to speed up query
