@@ -6,114 +6,24 @@ package forum_test
 
 import (
 	"backend/pkg/forum"
+	"backend/pkg/utils"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
-	"unicode"
+
+	"github.com/spf13/viper"
 )
-
-const (
-	TestPath = "127.0.0.1:9998"
-	TestGQL  = "http://127.0.0.1:9998/query"
-)
-
-var utoken string
-
-/*
-utility. make graphql requests
-
-gql request looks like:
-{"query":"mutation {\n  createUser(input:{\n    loginName: \"thumuht\"\n    password: \"harmful\"\n  }) {\n    id\n    loginName\n  }\n}"}
-
-but we only need inside mutation..
-*/
-func makeGQLRequest(gs string) *strings.Reader {
-	// DO NOT escape strings, RFC 7159 section #7
-	//
-	// https://www.rfc-editor.org/rfc/rfc7159#section-7
-	//
-	// send \n, rather than lf(0a)
-	//
-	// https://stackoverflow.com/questions/50054666/golang-not-escape-a-string-variable
-	return strings.NewReader(fmt.Sprintf(`{"query": %#v}`, gs))
-}
-
-/**
-utility. make gql requests with variable
-
-TODO
-*/
-// func makeGQLRequestV(gs string, hdr map[string]string) *strings.Reader{
-// 	return nil
-// }
-
-/*
-*
-utility. remove whitespaces for compare
-
-https://stackoverflow.com/questions/32081808/strip-all-whitespace-from-a-string
-*/
-func KillWhitespaces(s string) string {
-	return strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) {
-			return -1
-		}
-		return r
-	}, s)
-}
-
-func SendAndGetGQL(req string, hdr map[string]string) (*string, error) {
-	gqlreq, err := http.NewRequest("POST", TestGQL, makeGQLRequest(req))
-	if err != nil {
-		return nil, err
-	}
-
-	// header
-	gqlreq.Header.Set("content-type", "application/json")
-	for k, v := range hdr {
-		gqlreq.Header.Set(k, v)
-	}
-
-	newuserResp, err := http.DefaultClient.Do(gqlreq)
-	if err != nil {
-		return nil, err
-	}
-	defer newuserResp.Body.Close()
-
-	newuserBuf, err := io.ReadAll(newuserResp.Body)
-	if err != nil {
-		return nil, err
-	}
-	newuserS := string(newuserBuf)
-	return &newuserS, nil
-}
-
-/*
-*
-utility. send gql request & receive gql resp, and compare 'em
-*/
-func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, error) {
-	resp = KillWhitespaces(resp)
-
-	tresp, err := SendAndGetGQL(req, hdr)
-	if err != nil {
-		return false, err
-	}
-
-	*tresp = KillWhitespaces(*tresp)
-
-	println("Get Response\n", *tresp)
-
-	return strings.Compare(*tresp, resp) == 0, nil
-}
 
 // set up test environment.
 // for now, run forum server is ok..
 func TestMain(m *testing.M) {
-	app := forum.NewForum()
+	app = forum.NewForum()
 
 	// launch app. use goroutine, because Run() will block.
 	go func() {
@@ -301,4 +211,129 @@ func TestPostPaging(t *testing.T) {
 	}
 }
 
-// TODO(wj): filesystem test
+func TestCache(t *testing.T) {
+	browse := `mutation {
+		likePost(input: 1)
+	}`
+
+	getlike := `query {
+		postDetail(input: 1) {
+			like
+		}
+	}`
+
+	hdrs := map[string]string{"Token": utoken}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 20000; i++ {
+		wg.Add(1)
+		// i must be in parameter
+		go func() {
+			defer wg.Done()
+			_, _ = SendAndGetGQL(browse, hdrs)
+		}()
+	}
+
+	wg.Wait()
+
+	app.Cache.PostLike.Flush()
+	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":20000}}}`, nil)
+	if err != nil || !ok {
+		t.Error("testcache failed")
+	}
+}
+
+func TestFS(t *testing.T) {
+	s := utils.GenRandStr(2000)
+	err := os.WriteFile("testthisfile", []byte(s), 0777)
+	if err != nil {
+		t.Error("cannot test fs.")
+	}
+	viper.Set("fs_route", "./testfs")
+	t.Cleanup(func() {
+		os.Remove("testthisfile")
+	})
+
+	uploadfieldsK := []string{
+		"operations",
+		"map",
+	}
+	uploadfieldsV := []string{
+		`{"query": "mutation($req: Upload!) { fileUpload(input: {parentId: 1,parentType: post,upload: $req}) }","variables": { "req": null } }`,
+		`{ "0": ["variables.req"] }`,
+	}
+
+	files := map[string]string{
+		"0": "testthisfile",
+	}
+
+	req := makeMultiPartRequest(uploadfieldsK, uploadfieldsV, files)
+	req.Header.Add("Token", utoken)
+	str, _ := ReqToRespStr(req)
+	if strings.Compare(*str, `{"data":{"fileUpload":true}}`) != 0 {
+		t.Error("upload failed")
+	}
+
+	// now query post, should have attachment
+	qpost := `query {
+		postDetail(input: 1) {
+			attachment {
+				parentId
+				parentType
+				fileName
+			}
+		}
+	}`
+
+	bad, _ := SendAndCompareGQL(qpost, `{"data":{"postDetail":{"attachment":[{"parentId":1,"parentType":"post","fileName":"testthisfile"}]}}}`, nil)
+	if bad {
+		t.Error("attachment did not goto database")
+	}
+
+	// check file sanity
+	resp, err := http.Get("http://" + path.Join(TestPath, "fs/testthisfile"))
+	if err != nil {
+		t.Error("cannot get fs")
+	}
+	t.Cleanup(func() {
+		os.RemoveAll("./testfs")
+		os.Remove("./testfs")
+	})
+	defer resp.Body.Close()
+
+	results, _ := io.ReadAll(resp.Body)
+	if strings.Compare(string(results), s) != 0 {
+		t.Error("file do not identical")
+	}
+
+}
+
+// Test @login API before THIS
+func TestLogout(t *testing.T) {
+	logout := `mutation {
+		logout
+	}`
+
+	hdrs := map[string]string{"Token": utoken}
+	ok, err := SendAndCompareGQL(logout, `{"data":{"logout":true}}`, hdrs)
+	if err != nil || !ok {
+		t.Error("cannot send gql")
+	}
+
+	np := `mutation {
+		createPost(input: {
+			userId: 1
+			title: "go"
+			content: "too good"
+		}) {
+			id
+			title
+			content
+		}
+	}`
+	ok, err = SendAndCompareGQL(np, fmt.Sprintf(`{"errors":[{"message":"no token %s access denied","path":["createPost"]}],"data":null}`, utoken), hdrs)
+	if err != nil || !ok {
+		t.Error("cannot get gql")
+	}
+
+}

@@ -26,13 +26,15 @@ type Post struct {
 	ID        int32     `json:"id" bun:"post_id,pk,autoincrement"`
 	Title     string    `json:"title" bun:"title"`
 	Content   string    `json:"content" bun:"content"`
+	View      int32     `json:"view" bun:"view"`
+	Like      int32     `json:"like" bun:"like"`
 	UserID    int32     `json:"userId" bun:"post_userid"`
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 
 	User       *User         `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
 	Comment    []*Comment    `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
-	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:post_id=attachment_postid"`
+	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:post_id=attachment_parentid,join:type=parent_type,polymorphic"`
 }
 
 type Comment struct {
@@ -40,22 +42,24 @@ type Comment struct {
 
 	ID        int32     `json:"id" bun:"comment_id,pk,autoincrement"`
 	Content   string    `json:"content" bun:"content"`
+	Like      int32     `json:"like" bun:"like"`
 	UserID    int32     `json:"userId" bun:"comment_userid"`
 	PostID    int32     `json:"postId" bun:"comment_postid"`
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 
-	User *User `json:"user" bun:"rel:belongs-to,join:comment_userid=user_id,on_delete:cascade"`
-	Post *Post `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
+	User       *User         `json:"user" bun:"rel:belongs-to,join:comment_userid=user_id,on_delete:cascade"`
+	Post       *Post         `json:"post" bun:"rel:belongs-to,join:comment_postid=post_id,on_delete:cascade"`
+	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:comment_id=attachment_parentid,join:type=parent_type,polymorphic"`
 }
 
-// TODO(wj, mid): allow comment have attachments
 type Attachment struct {
 	bun.BaseModel `bun:"table:attachment"`
 
-	PostID    int32     `json:"postId" bun:"attachment_postid"`
-	FileName  string    `json:"fileName" bun:"file_name"`
-	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
-
-	Post *Post `bun:"rel:belongs-to,join:attachment_postid=post_id,on_delete:cascade"`
+	ParentID   int32     `json:"parentId" bun:"attachment_parentid"`
+	ParentType string    `json:"parentType" bun:"parent_type"`
+	FileName   string    `json:"fileName" bun:"file_name"`
+	CreatedAt  time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 }
+
+// TODO(wj): follow, conversation

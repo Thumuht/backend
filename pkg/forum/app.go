@@ -21,7 +21,7 @@ import (
 type App struct {
 	*gin.Engine                   // router
 	DB          *bun.DB           // db instance
-	Sessions    map[string]string // user sessions. login status. TODO(wj, mid): use Redis!
+	Cache       database.AppCache // cache
 	GQL         *handler.Server   // gql server
 }
 
@@ -35,14 +35,16 @@ func NewForum() *App {
 		panic("no db")
 	}
 	database.InitModels(app.DB)
-
-	app.Sessions = make(map[string]string)
+	app.Cache = database.NewAppCache()
+	app.Cache.PostLike.SetFlushTarget("post", "post_id", "like", app.DB)
+	app.Cache.PostView.SetFlushTarget("post", "post_id", "view", app.DB)
+	app.Cache.CommentLike.SetFlushTarget("comment", "comment_id", "like", app.DB)
 
 	app.GQL = handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{
 			Resolvers: &graph.Resolver{
-				DB:       app.DB,
-				Sessions: app.Sessions,
+				DB:    app.DB,
+				Cache: app.Cache,
 			},
 			Directives: graph.DirectiveRoot{
 				Login: func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
@@ -52,12 +54,11 @@ func NewForum() *App {
 					}
 
 					token := gctx.GetHeader("Token")
-					for k, v := range app.Sessions {
-						if v == token {
-							gctx.AddParam("appuser", k)
-							return next(ctx)
-						}
+					if username, ok := app.Cache.Sessions.Get(token); ok {
+						gctx.AddParam("appuser", *username)
+						return next(ctx)
 					}
+
 					return nil, fmt.Errorf("no token %s access denied", token)
 				},
 			},

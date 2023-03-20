@@ -6,13 +6,17 @@ import (
 	"strings"
 )
 
-// generates a random token for user auth.
-// we do not use JWT
-func GenToken() string {
-	randomBytes := make([]byte, 20)
+func GenRandStr(n int) string {
+	randomBytes := make([]byte, n)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		panic(err)
 	}
-	return strings.ToLower(base32.StdEncoding.EncodeToString(randomBytes))
+	return base32.StdEncoding.EncodeToString(randomBytes)
+}
+
+// generates a random token for user auth.
+// we do not use JWT
+func GenToken() string {
+	return strings.ToLower(GenRandStr(20))
 }

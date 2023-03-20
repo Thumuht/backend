@@ -54,8 +54,9 @@ type NewUser struct {
 }
 
 type PostUpload struct {
-	Upload graphql.Upload `json:"upload"`
-	PostID int            `json:"postId"`
+	Upload     graphql.Upload   `json:"upload"`
+	ParentID   int              `json:"parentId"`
+	ParentType AttachmentParent `json:"parentType"`
 }
 
 type UpdateComment struct {
@@ -69,11 +70,53 @@ type UpdatePost struct {
 	Content *string `json:"content"`
 }
 
+type AttachmentParent string
+
+const (
+	AttachmentParentPost    AttachmentParent = "post"
+	AttachmentParentComment AttachmentParent = "comment"
+)
+
+var AllAttachmentParent = []AttachmentParent{
+	AttachmentParentPost,
+	AttachmentParentComment,
+}
+
+func (e AttachmentParent) IsValid() bool {
+	switch e {
+	case AttachmentParentPost, AttachmentParentComment:
+		return true
+	}
+	return false
+}
+
+func (e AttachmentParent) String() string {
+	return string(e)
+}
+
+func (e *AttachmentParent) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AttachmentParent(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AttachmentParent", str)
+	}
+	return nil
+}
+
+func (e AttachmentParent) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type CommentOrderBy string
 
 const (
 	CommentOrderByCommentID CommentOrderBy = "comment_id"
 	CommentOrderByContent   CommentOrderBy = "content"
+	CommentOrderByLike      CommentOrderBy = "like"
 	CommentOrderByCreatedAt CommentOrderBy = "created_at"
 	CommentOrderByUpdatedAt CommentOrderBy = "updated_at"
 )
@@ -81,13 +124,14 @@ const (
 var AllCommentOrderBy = []CommentOrderBy{
 	CommentOrderByCommentID,
 	CommentOrderByContent,
+	CommentOrderByLike,
 	CommentOrderByCreatedAt,
 	CommentOrderByUpdatedAt,
 }
 
 func (e CommentOrderBy) IsValid() bool {
 	switch e {
-	case CommentOrderByCommentID, CommentOrderByContent, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
+	case CommentOrderByCommentID, CommentOrderByContent, CommentOrderByLike, CommentOrderByCreatedAt, CommentOrderByUpdatedAt:
 		return true
 	}
 	return false
@@ -161,6 +205,8 @@ const (
 	PostOrderByPostID    PostOrderBy = "post_id"
 	PostOrderByTitle     PostOrderBy = "title"
 	PostOrderByContent   PostOrderBy = "content"
+	PostOrderByView      PostOrderBy = "view"
+	PostOrderByLike      PostOrderBy = "like"
 	PostOrderByUserID    PostOrderBy = "userId"
 	PostOrderByCreatedAt PostOrderBy = "created_at"
 	PostOrderByUpdatedAt PostOrderBy = "updated_at"
@@ -170,6 +216,8 @@ var AllPostOrderBy = []PostOrderBy{
 	PostOrderByPostID,
 	PostOrderByTitle,
 	PostOrderByContent,
+	PostOrderByView,
+	PostOrderByLike,
 	PostOrderByUserID,
 	PostOrderByCreatedAt,
 	PostOrderByUpdatedAt,
@@ -177,7 +225,7 @@ var AllPostOrderBy = []PostOrderBy{
 
 func (e PostOrderBy) IsValid() bool {
 	switch e {
-	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
+	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByView, PostOrderByLike, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
 		return true
 	}
 	return false

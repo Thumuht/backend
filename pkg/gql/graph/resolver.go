@@ -6,6 +6,9 @@ package graph
 //go:generate go run github.com/99designs/gqlgen generate
 
 import (
+	"backend/pkg/db"
+	"sync"
+
 	"github.com/uptrace/bun"
 )
 
@@ -14,7 +17,7 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	DB *bun.DB
-	// TODO: use Redis
-	Sessions map[string]string
+	DB    *bun.DB
+	Cache db.AppCache
+	Mutex sync.Mutex
 }

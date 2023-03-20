@@ -7,4 +7,5 @@ input LoginSession {
 
 extend type Mutation {
   login(input: LoginSession!): String!
+  logout: Boolean!                          @login
 }
