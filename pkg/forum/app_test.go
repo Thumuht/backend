@@ -285,9 +285,8 @@ func TestFS(t *testing.T) {
 			}
 		}
 	}`
-
-	bad, _ := SendAndCompareGQL(qpost, `{"data":{"postDetail":{"attachment":[{"parentId":1,"parentType":"post","fileName":"testthisfile"}]}}}`, nil)
-	if bad {
+	ok, _ := SendAndCompareGQL(qpost, `{"data":{"postDetail":{"attachment":[{"parentId":1,"parentType":"post","fileName":"testthisfile"}]}}}`, nil)
+	if !ok {
 		t.Error("attachment did not goto database")
 	}
 

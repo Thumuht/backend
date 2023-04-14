@@ -18,6 +18,9 @@ type User struct {
 
 	Post    []*Post    `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
 	Comment []*Comment `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
+	Follow   []*Follow    `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
+	Follower []*Follow    `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
+	BookmarkList []*BookmarkList `json:"userBookmarkList" bun:"rel:has-many,join:user_id=bookmark_list_userid"`
 }
 
 type Post struct {
@@ -56,6 +59,7 @@ type Comment struct {
 type Attachment struct {
 	bun.BaseModel `bun:"table:attachment"`
 
+	ID         int32     `json:"id" bun:"attachment_id,pk,autoincrement"`
 	ParentID   int32     `json:"parentId" bun:"attachment_parentid"`
 	ParentType string    `json:"parentType" bun:"parent_type"`
 	FileName   string    `json:"fileName" bun:"file_name"`
@@ -63,3 +67,47 @@ type Attachment struct {
 }
 
 // TODO(wj): follow, conversation
+type Follow struct {
+	bun.BaseModel `bun:"table:follow"`
+
+	FollowFromId int32 `bun:"follow_from,pk"`
+	FollowToId   int32 `bun:"follow_to,pk"`
+
+	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from=user_id,on_delete:cascade"`
+	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to=user_id,on_delete:cascade"`
+
+	CreatedAt  int32 `bun:",nullzero,notnull,default:current_timestamp"`
+}
+
+type Conversation struct {
+	bun.BaseModel `bun:"table:conversation"`
+
+	ID       int32  `json:"conversationId" bun:"conversation_id,pk"`
+	UserFrom int32  `json:"userFrom" bun:"user_from"`
+	UserTo   int32  `json:"userTo" bun:"user_to"`
+	Content  string `json:"content" bun:"content"`
+}
+
+type Bookmark struct {
+	bun.BaseModel `bun:"table:bookmark"`
+
+	ID     int32  `json:"id" bun:"bookmark_id,pk"`
+	PostID int32  `bun:"bookmark_postid"`
+	Post  *Post  `json:"post" bun:"rel:belongs-to,join:bookmark_postid=post_id"`
+	BookmarkListID int32 `bun:"bookmark_bookmarklistid"`
+	BookmarkList *BookmarkList `json:"bookmarkList" bun:"rel:belongs-to,join:bookmark_bookmarklistid=bookmark_list_id"`
+}
+
+type BookmarkList struct {
+	bun.BaseModel `bun:"table:bookmark_list"`
+
+	ID     int32  `json:"id" bun:"bookmark_list_id,pk"`
+	List   string `json:"list" bun:"bookmark_list"`
+	UserID int32  `bun:"bookmark_list_userid"`
+	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
+	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
+
+	User *User `json:"user" bun:"rel:belongs-to,join:bookmark_list_userid=user_id,on_delete:cascade"`
+	// many-to-many through Bookmark
+	Post []*Post `json:"post" bun:"m2m:bookmark,join:Post=BookmarkList"`
+}

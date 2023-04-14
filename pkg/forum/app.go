@@ -54,8 +54,9 @@ func NewForum() *App {
 					}
 
 					token := gctx.GetHeader("Token")
-					if username, ok := app.Cache.Sessions.Get(token); ok {
-						gctx.AddParam("appuser", *username)
+					if userId, ok := app.Cache.Sessions.Get(token); ok {
+						// let id be a string
+						gctx.AddParam("userId", fmt.Sprintf("%d", userId))
 						return next(ctx)
 					}
 

@@ -39,13 +39,13 @@ type LoginSession struct {
 type NewComment struct {
 	UserID  int     `json:"userId"`
 	PostID  int     `json:"postId"`
-	Content *string `json:"content"`
+	Content *string `json:"content,omitempty"`
 }
 
 type NewPost struct {
 	UserID  int     `json:"userId"`
-	Title   *string `json:"title"`
-	Content *string `json:"content"`
+	Title   *string `json:"title,omitempty"`
+	Content *string `json:"content,omitempty"`
 }
 
 type NewUser struct {
@@ -61,13 +61,13 @@ type PostUpload struct {
 
 type UpdateComment struct {
 	CommentID int     `json:"commentId"`
-	Content   *string `json:"content"`
+	Content   *string `json:"content,omitempty"`
 }
 
 type UpdatePost struct {
 	PostID  int     `json:"postId"`
-	Title   *string `json:"title"`
-	Content *string `json:"content"`
+	Title   *string `json:"title,omitempty"`
+	Content *string `json:"content,omitempty"`
 }
 
 type AttachmentParent string

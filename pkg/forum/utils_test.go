@@ -139,7 +139,7 @@ func SendAndCompareGQL(req string, resp string, hdr map[string]string) (bool, er
 
 	*tresp = KillWhitespaces(*tresp)
 
-	println("Get Response\n", *tresp)
+	println("Get Response\n", *tresp, resp, strings.Compare(*tresp, resp))
 
 	return strings.Compare(*tresp, resp) == 0, nil
 }

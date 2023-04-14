@@ -65,6 +65,30 @@ func InitModels(db *bun.DB) error {
 		return err
 	}
 
+	_, err = db.NewCreateTable().Model((*Follow)(nil)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+
+	// new conversation model
+	_, err = db.NewCreateTable().Model((*Conversation)(nil)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	// new bookmark model
+	_, err = db.NewCreateTable().Model((*Bookmark)(nil)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	// new bookmark_list model
+	_, err = db.NewCreateTable().Model((*BookmarkList)(nil)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
