@@ -18,6 +18,7 @@ type Cache[K comparable, V any] interface {
 	SetFlushTarget(table, keycol, valcol string, pdb *bun.DB)
 	Flush() error
 	Invalidate(flush bool) error
+	Shutdown()
 }
 
 // IN MEMORY MAP CACHE
@@ -87,15 +88,19 @@ func (mc *MapCache[K, V]) String() string {
 }
 
 func (mc *MapCache[K, V]) Invalidate(flush bool) error {
-	mc.Lock()
 	if flush {
-		defer mc.Flush()
+		mc.Flush()
 	}
+	mc.Lock()
 	defer mc.Unlock()
 	for k := range mc.c {
 		delete(mc.c, k)
 	}
 	return nil
+}
+
+func (mc *MapCache[K, V]) Shutdown() {
+	mc.Invalidate(true)
 }
 
 func NewMapCache[K comparable, V any]() Cache[K, V] {
