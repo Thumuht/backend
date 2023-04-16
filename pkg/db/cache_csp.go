@@ -11,15 +11,15 @@ import (
 
 // MapCacheCSP is a concurrent-safe map cache
 type MapCacheCSP[K comparable, V any] struct {
-	c            map[K]V
-	table        string
-	keycol       string
-	valcol       string
-	pdb          *bun.DB // persistant storage db
+	c      map[K]V
+	table  string
+	keycol string
+	valcol string
+	pdb    *bun.DB // persistant storage db
 	// channels
-	eventc 		 chan event
-	reqc		 chan []any
-	quitc        chan struct{}
+	eventc chan event
+	reqc   chan []any
+	quitc  chan struct{}
 }
 
 // event represents Req/Resp
@@ -37,15 +37,15 @@ const (
 
 type event struct {
 	eventType enumEventType
-	args []any
+	args      []any
 }
 
 func (mc *MapCacheCSP[K, V]) loop() {
 	for {
 		select {
-		case e := <- mc.eventc:
+		case e := <-mc.eventc:
 			mc.reqc <- mc.process(e)
-		case <- mc.quitc:
+		case <-mc.quitc:
 			close(mc.reqc)
 			close(mc.eventc)
 			close(mc.quitc)
@@ -77,17 +77,17 @@ func (mc *MapCacheCSP[K, V]) flush() error {
 	return nil
 }
 
-func (mc *MapCacheCSP[K, V]) process(e event) []any{
+func (mc *MapCacheCSP[K, V]) process(e event) []any {
 	switch e.eventType {
 	case GET:
 		value, ok := mc.c[e.args[0].(K)]
 		if !ok {
-			return []any {
+			return []any{
 				nil,
 				false,
 			}
 		}
-		return []any {
+		return []any{
 			&value,
 			ok,
 		}
@@ -103,7 +103,7 @@ func (mc *MapCacheCSP[K, V]) process(e event) []any{
 	case FLUSH:
 		err := mc.flush()
 		if err != nil {
-			return []any {
+			return []any{
 				err,
 			}
 		}
@@ -112,14 +112,14 @@ func (mc *MapCacheCSP[K, V]) process(e event) []any{
 		for k, v := range mc.c {
 			s = append(s, fmt.Sprintf("('%#v', '%#v')", k, v))
 		}
-		return []any {
+		return []any{
 			strings.Join(s, ",\n"),
 		}
 	case INVALIDATE:
 		if e.args[0].(bool) {
 			err := mc.flush()
 			if err != nil {
-				return []any {
+				return []any{
 					err,
 				}
 			}
@@ -131,15 +131,14 @@ func (mc *MapCacheCSP[K, V]) process(e event) []any{
 	return nil
 }
 
-
 func (mc *MapCacheCSP[K, V]) Get(key K) (*V, bool) {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		GET,
-		[] any {
+		[]any{
 			key,
 		},
 	}
-	resp := <- mc.reqc
+	resp := <-mc.reqc
 	if resp[0] == nil {
 		return nil, resp[1].(bool)
 	}
@@ -147,47 +146,47 @@ func (mc *MapCacheCSP[K, V]) Get(key K) (*V, bool) {
 }
 
 func (mc *MapCacheCSP[K, V]) Remove(key K) error {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		REMOVE,
-		[] any {
+		[]any{
 			key,
 		},
 	}
-	<- mc.reqc
+	<-mc.reqc
 	return nil
 }
 
 func (mc *MapCacheCSP[K, V]) Set(key K, value V) error {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		SET_VALUE,
-		[] any {
+		[]any{
 			key,
 			value,
 		},
 	}
-	<- mc.reqc
+	<-mc.reqc
 	return nil
 }
 
 func (mc *MapCacheCSP[K, V]) SetFlushTarget(table, keycol, valcol string, pdb *bun.DB) {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		SET_TARGET,
-		[] any {
+		[]any{
 			table,
 			keycol,
 			valcol,
 			pdb,
 		},
 	}
-	<- mc.reqc
+	<-mc.reqc
 }
 
 func (mc *MapCacheCSP[K, V]) Flush() error {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		FLUSH,
 		nil,
 	}
-	resp := <- mc.reqc
+	resp := <-mc.reqc
 	if resp != nil {
 		return resp[0].(error)
 	}
@@ -195,22 +194,22 @@ func (mc *MapCacheCSP[K, V]) Flush() error {
 }
 
 func (mc *MapCacheCSP[K, V]) String() string {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		STRING,
 		nil,
 	}
-	resp := <- mc.reqc
+	resp := <-mc.reqc
 	return resp[0].(string)
 }
 
 func (mc *MapCacheCSP[K, V]) Invalidate(flush bool) error {
-	mc.eventc <- event {
+	mc.eventc <- event{
 		INVALIDATE,
-		[] any {
+		[]any{
 			flush,
 		},
 	}
-	resp := <- mc.reqc
+	resp := <-mc.reqc
 	if resp != nil {
 		return resp[0].(error)
 	}
@@ -223,10 +222,10 @@ func (mc *MapCacheCSP[K, V]) Shutdown() {
 
 func NewMapCacheCSP[K comparable, V any]() Cache[K, V] {
 	newmc := &MapCacheCSP[K, V]{
-		c: make(map[K]V),
+		c:      make(map[K]V),
 		eventc: make(chan event),
-		reqc: make(chan []any),
-		quitc: make(chan struct{}),
+		reqc:   make(chan []any),
+		quitc:  make(chan struct{}),
 	}
 	go newmc.loop()
 	return newmc

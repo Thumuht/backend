@@ -70,7 +70,6 @@ func InitModels(db *bun.DB) error {
 		return err
 	}
 
-
 	// new conversation model
 	_, err = db.NewCreateTable().Model((*Conversation)(nil)).Exec(ctx)
 	if err != nil {

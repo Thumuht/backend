@@ -32,6 +32,7 @@ type User @goModel(
   comment: [Comment]
   follow: [User]
   follower: [User]
+  bookmarkList: [BookmarkList]
 }
 
 type Post @goModel(
@@ -58,10 +59,23 @@ type Comment @goModel(
   like: Int
   createdAt: Time
   updatedAt: Time
-  
+
   user: User
   post: Post
   attachment: [Attachment]
+}
+
+
+type BookmarkList @goModel(
+  model: "backend/pkg/db.BookmarkList"
+){
+  id: Int!
+  list: String
+  createdAt: Time
+  updatedAt: Time
+
+  user: User
+  post: [Post]
 }
 
 
@@ -93,6 +107,11 @@ input UpdateComment {
   content: String
 }
 
+input NewMarkPost {
+  postId: Int!
+  bookmarkListId: Int!
+}
+
 type Mutation {
   createUser (input: NewUser!): User!
   createPost(input: NewPost!): Post!                     @login
@@ -107,6 +126,9 @@ type Mutation {
   updateComment(input: UpdateComment!): Comment!         @login
   likePost(input: Int!): Boolean!                        @login
   likeComment(input: Int!): Boolean!                     @login
+
+  newBookmarkList(input: String!): BookmarkList!         @login
+  markPost(input: NewMarkPost!): Boolean!                @login
 }
 
 enum UserOrderBy {

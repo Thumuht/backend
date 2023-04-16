@@ -56,6 +56,15 @@ type ComplexityRoot struct {
 		ParentType func(childComplexity int) int
 	}
 
+	BookmarkList struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		List      func(childComplexity int) int
+		Post      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		User      func(childComplexity int) int
+	}
+
 	Comment struct {
 		Attachment func(childComplexity int) int
 		Content    func(childComplexity int) int
@@ -68,20 +77,22 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateComment func(childComplexity int, input model.NewComment) int
-		CreatePost    func(childComplexity int, input model.NewPost) int
-		CreateUser    func(childComplexity int, input model.NewUser) int
-		DeleteComment func(childComplexity int, input int) int
-		DeletePost    func(childComplexity int, input int) int
-		DeleteUser    func(childComplexity int, input int) int
-		FileUpload    func(childComplexity int, input *model.PostUpload) int
-		FollowUser    func(childComplexity int, input int) int
-		LikeComment   func(childComplexity int, input int) int
-		LikePost      func(childComplexity int, input int) int
-		Login         func(childComplexity int, input model.LoginSession) int
-		Logout        func(childComplexity int) int
-		UpdateComment func(childComplexity int, input model.UpdateComment) int
-		UpdatePost    func(childComplexity int, input model.UpdatePost) int
+		CreateComment   func(childComplexity int, input model.NewComment) int
+		CreatePost      func(childComplexity int, input model.NewPost) int
+		CreateUser      func(childComplexity int, input model.NewUser) int
+		DeleteComment   func(childComplexity int, input int) int
+		DeletePost      func(childComplexity int, input int) int
+		DeleteUser      func(childComplexity int, input int) int
+		FileUpload      func(childComplexity int, input *model.PostUpload) int
+		FollowUser      func(childComplexity int, input int) int
+		LikeComment     func(childComplexity int, input int) int
+		LikePost        func(childComplexity int, input int) int
+		Login           func(childComplexity int, input model.LoginSession) int
+		Logout          func(childComplexity int) int
+		MarkPost        func(childComplexity int, input model.NewMarkPost) int
+		NewBookmarkList func(childComplexity int, input string) int
+		UpdateComment   func(childComplexity int, input model.UpdateComment) int
+		UpdatePost      func(childComplexity int, input model.UpdatePost) int
 	}
 
 	Post struct {
@@ -105,16 +116,17 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		About     func(childComplexity int) int
-		Comment   func(childComplexity int) int
-		Email     func(childComplexity int) int
-		Follow    func(childComplexity int) int
-		Follower  func(childComplexity int) int
-		ID        func(childComplexity int) int
-		LoginName func(childComplexity int) int
-		Nickname  func(childComplexity int) int
-		Password  func(childComplexity int) int
-		Post      func(childComplexity int) int
+		About        func(childComplexity int) int
+		BookmarkList func(childComplexity int) int
+		Comment      func(childComplexity int) int
+		Email        func(childComplexity int) int
+		Follow       func(childComplexity int) int
+		Follower     func(childComplexity int) int
+		ID           func(childComplexity int) int
+		LoginName    func(childComplexity int) int
+		Nickname     func(childComplexity int) int
+		Password     func(childComplexity int) int
+		Post         func(childComplexity int) int
 	}
 }
 
@@ -133,6 +145,8 @@ type MutationResolver interface {
 	UpdateComment(ctx context.Context, input model.UpdateComment) (*db.Comment, error)
 	LikePost(ctx context.Context, input int) (bool, error)
 	LikeComment(ctx context.Context, input int) (bool, error)
+	NewBookmarkList(ctx context.Context, input string) (*db.BookmarkList, error)
+	MarkPost(ctx context.Context, input model.NewMarkPost) (bool, error)
 	FileUpload(ctx context.Context, input *model.PostUpload) (bool, error)
 	Login(ctx context.Context, input model.LoginSession) (string, error)
 	Logout(ctx context.Context) (bool, error)
@@ -183,6 +197,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Attachment.ParentType(childComplexity), true
+
+	case "BookmarkList.createdAt":
+		if e.complexity.BookmarkList.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.CreatedAt(childComplexity), true
+
+	case "BookmarkList.id":
+		if e.complexity.BookmarkList.ID == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.ID(childComplexity), true
+
+	case "BookmarkList.list":
+		if e.complexity.BookmarkList.List == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.List(childComplexity), true
+
+	case "BookmarkList.post":
+		if e.complexity.BookmarkList.Post == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.Post(childComplexity), true
+
+	case "BookmarkList.updatedAt":
+		if e.complexity.BookmarkList.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.UpdatedAt(childComplexity), true
+
+	case "BookmarkList.user":
+		if e.complexity.BookmarkList.User == nil {
+			break
+		}
+
+		return e.complexity.BookmarkList.User(childComplexity), true
 
 	case "Comment.attachment":
 		if e.complexity.Comment.Attachment == nil {
@@ -379,6 +435,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Logout(childComplexity), true
 
+	case "Mutation.markPost":
+		if e.complexity.Mutation.MarkPost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MarkPost(childComplexity, args["input"].(model.NewMarkPost)), true
+
+	case "Mutation.newBookmarkList":
+		if e.complexity.Mutation.NewBookmarkList == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_newBookmarkList_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NewBookmarkList(childComplexity, args["input"].(string)), true
+
 	case "Mutation.updateComment":
 		if e.complexity.Mutation.UpdateComment == nil {
 			break
@@ -528,6 +608,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.About(childComplexity), true
 
+	case "User.bookmarkList":
+		if e.complexity.User.BookmarkList == nil {
+			break
+		}
+
+		return e.complexity.User.BookmarkList(childComplexity), true
+
 	case "User.comment":
 		if e.complexity.User.Comment == nil {
 			break
@@ -604,6 +691,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputGetUserInput,
 		ec.unmarshalInputLoginSession,
 		ec.unmarshalInputNewComment,
+		ec.unmarshalInputNewMarkPost,
 		ec.unmarshalInputNewPost,
 		ec.unmarshalInputNewUser,
 		ec.unmarshalInputPostUpload,
@@ -847,6 +935,36 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNLoginSession2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐLoginSession(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_markPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.NewMarkPost
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNNewMarkPost2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐNewMarkPost(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_newBookmarkList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1130,6 +1248,301 @@ func (ec *executionContext) fieldContext_Attachment_fileName(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _BookmarkList_id(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookmarkList_list(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_list(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.List, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_list(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookmarkList_createdAt(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookmarkList_updatedAt(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookmarkList_user(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*db.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖbackendᚋpkgᚋdbᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "loginName":
+				return ec.fieldContext_User_loginName(ctx, field)
+			case "nickname":
+				return ec.fieldContext_User_nickname(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "about":
+				return ec.fieldContext_User_about(ctx, field)
+			case "post":
+				return ec.fieldContext_User_post(ctx, field)
+			case "comment":
+				return ec.fieldContext_User_comment(ctx, field)
+			case "follow":
+				return ec.fieldContext_User_follow(ctx, field)
+			case "follower":
+				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BookmarkList_post(ctx context.Context, field graphql.CollectedField, obj *db.BookmarkList) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BookmarkList_post(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Post, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*db.Post)
+	fc.Result = res
+	return ec.marshalOPost2ᚕᚖbackendᚋpkgᚋdbᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BookmarkList_post(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BookmarkList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Post_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			case "view":
+				return ec.fieldContext_Post_view(ctx, field)
+			case "like":
+				return ec.fieldContext_Post_like(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Post_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Post_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_Post_user(ctx, field)
+			case "comment":
+				return ec.fieldContext_Post_comment(ctx, field)
+			case "attachment":
+				return ec.fieldContext_Post_attachment(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *db.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_id(ctx, field)
 	if err != nil {
@@ -1394,6 +1807,8 @@ func (ec *executionContext) fieldContext_Comment_user(ctx context.Context, field
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1572,6 +1987,8 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2420,6 +2837,170 @@ func (ec *executionContext) fieldContext_Mutation_likeComment(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_newBookmarkList(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_newBookmarkList(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().NewBookmarkList(rctx, fc.Args["input"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*db.BookmarkList); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *backend/pkg/db.BookmarkList`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*db.BookmarkList)
+	fc.Result = res
+	return ec.marshalNBookmarkList2ᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_newBookmarkList(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BookmarkList_id(ctx, field)
+			case "list":
+				return ec.fieldContext_BookmarkList_list(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BookmarkList_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BookmarkList_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_BookmarkList_user(ctx, field)
+			case "post":
+				return ec.fieldContext_BookmarkList_post(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BookmarkList", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_newBookmarkList_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_markPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_markPost(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().MarkPost(rctx, fc.Args["input"].(model.NewMarkPost))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markPost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_markPost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_fileUpload(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_fileUpload(ctx, field)
 	if err != nil {
@@ -2960,6 +3541,8 @@ func (ec *executionContext) fieldContext_Post_user(ctx context.Context, field gr
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3134,6 +3717,8 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3938,6 +4523,8 @@ func (ec *executionContext) fieldContext_User_follow(ctx context.Context, field 
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4001,8 +4588,65 @@ func (ec *executionContext) fieldContext_User_follower(ctx context.Context, fiel
 				return ec.fieldContext_User_follow(ctx, field)
 			case "follower":
 				return ec.fieldContext_User_follower(ctx, field)
+			case "bookmarkList":
+				return ec.fieldContext_User_bookmarkList(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_bookmarkList(ctx context.Context, field graphql.CollectedField, obj *db.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_bookmarkList(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BookmarkList, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*db.BookmarkList)
+	fc.Result = res
+	return ec.marshalOBookmarkList2ᚕᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_bookmarkList(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BookmarkList_id(ctx, field)
+			case "list":
+				return ec.fieldContext_BookmarkList_list(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BookmarkList_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_BookmarkList_updatedAt(ctx, field)
+			case "user":
+				return ec.fieldContext_BookmarkList_user(ctx, field)
+			case "post":
+				return ec.fieldContext_BookmarkList_post(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BookmarkList", field.Name)
 		},
 	}
 	return fc, nil
@@ -6056,6 +6700,42 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewMarkPost(ctx context.Context, obj interface{}) (model.NewMarkPost, error) {
+	var it model.NewMarkPost
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"postId", "bookmarkListId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "postId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
+			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bookmarkListId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bookmarkListId"))
+			it.BookmarkListID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj interface{}) (model.NewPost, error) {
 	var it model.NewPost
 	asMap := map[string]interface{}{}
@@ -6323,6 +7003,54 @@ func (ec *executionContext) _Attachment(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var bookmarkListImplementors = []string{"BookmarkList"}
+
+func (ec *executionContext) _BookmarkList(ctx context.Context, sel ast.SelectionSet, obj *db.BookmarkList) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bookmarkListImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BookmarkList")
+		case "id":
+
+			out.Values[i] = ec._BookmarkList_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "list":
+
+			out.Values[i] = ec._BookmarkList_list(ctx, field, obj)
+
+		case "createdAt":
+
+			out.Values[i] = ec._BookmarkList_createdAt(ctx, field, obj)
+
+		case "updatedAt":
+
+			out.Values[i] = ec._BookmarkList_updatedAt(ctx, field, obj)
+
+		case "user":
+
+			out.Values[i] = ec._BookmarkList_user(ctx, field, obj)
+
+		case "post":
+
+			out.Values[i] = ec._BookmarkList_post(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var commentImplementors = []string{"Comment"}
 
 func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, obj *db.Comment) graphql.Marshaler {
@@ -6492,6 +7220,24 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_likeComment(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "newBookmarkList":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_newBookmarkList(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "markPost":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markPost(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -6815,6 +7561,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				return innerFunc(ctx)
 
 			})
+		case "bookmarkList":
+
+			out.Values[i] = ec._User_bookmarkList(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7154,6 +7904,20 @@ func (ec *executionContext) marshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraph
 	return v
 }
 
+func (ec *executionContext) marshalNBookmarkList2backendᚋpkgᚋdbᚐBookmarkList(ctx context.Context, sel ast.SelectionSet, v db.BookmarkList) graphql.Marshaler {
+	return ec._BookmarkList(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBookmarkList2ᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx context.Context, sel ast.SelectionSet, v *db.BookmarkList) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BookmarkList(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7289,6 +8053,11 @@ func (ec *executionContext) unmarshalNLoginSession2backendᚋpkgᚋgqlᚋgraph�
 
 func (ec *executionContext) unmarshalNNewComment2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐNewComment(ctx context.Context, v interface{}) (model.NewComment, error) {
 	res, err := ec.unmarshalInputNewComment(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNNewMarkPost2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐNewMarkPost(ctx context.Context, v interface{}) (model.NewMarkPost, error) {
+	res, err := ec.unmarshalInputNewMarkPost(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -7787,6 +8556,54 @@ func (ec *executionContext) marshalOAttachment2ᚖbackendᚋpkgᚋdbᚐAttachmen
 		return graphql.Null
 	}
 	return ec._Attachment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOBookmarkList2ᚕᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx context.Context, sel ast.SelectionSet, v []*db.BookmarkList) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBookmarkList2ᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOBookmarkList2ᚖbackendᚋpkgᚋdbᚐBookmarkList(ctx context.Context, sel ast.SelectionSet, v *db.BookmarkList) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BookmarkList(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

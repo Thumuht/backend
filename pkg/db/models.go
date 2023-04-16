@@ -16,10 +16,10 @@ type User struct {
 	Email     string `json:"email" bun:"email"`
 	About     string `json:"about" bun:"about"`
 
-	Post    []*Post    `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
-	Comment []*Comment `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
-	Follow   []*Follow    `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
-	Follower []*Follow    `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
+	Post         []*Post         `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
+	Comment      []*Comment      `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
+	Follow       []*Follow       `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
+	Follower     []*Follow       `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
 	BookmarkList []*BookmarkList `json:"userBookmarkList" bun:"rel:has-many,join:user_id=bookmark_list_userid"`
 }
 
@@ -76,7 +76,7 @@ type Follow struct {
 	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from=user_id,on_delete:cascade"`
 	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to=user_id,on_delete:cascade"`
 
-	CreatedAt  int32 `bun:",nullzero,notnull,default:current_timestamp"`
+	CreatedAt int32 `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
 type Conversation struct {
@@ -91,19 +91,19 @@ type Conversation struct {
 type Bookmark struct {
 	bun.BaseModel `bun:"table:bookmark"`
 
-	ID     int32  `json:"id" bun:"bookmark_id,pk"`
-	PostID int32  `bun:"bookmark_postid"`
-	Post  *Post  `json:"post" bun:"rel:belongs-to,join:bookmark_postid=post_id"`
-	BookmarkListID int32 `bun:"bookmark_bookmarklistid"`
-	BookmarkList *BookmarkList `json:"bookmarkList" bun:"rel:belongs-to,join:bookmark_bookmarklistid=bookmark_list_id"`
+	ID             int32         `json:"id" bun:"bookmark_id,pk"`
+	PostID         int32         `bun:"bookmark_postid"`
+	Post           *Post         `json:"post" bun:"rel:belongs-to,join:bookmark_postid=post_id"`
+	BookmarkListID int32         `bun:"bookmark_bookmarklistid"`
+	BookmarkList   *BookmarkList `json:"bookmarkList" bun:"rel:belongs-to,join:bookmark_bookmarklistid=bookmark_list_id"`
 }
 
 type BookmarkList struct {
 	bun.BaseModel `bun:"table:bookmark_list"`
 
-	ID     int32  `json:"id" bun:"bookmark_list_id,pk"`
-	List   string `json:"list" bun:"bookmark_list"`
-	UserID int32  `bun:"bookmark_list_userid"`
+	ID        int32     `json:"id" bun:"bookmark_list_id,pk"`
+	List      string    `json:"list" bun:"bookmark_list"`
+	UserID    int32     `bun:"bookmark_list_userid"`
 	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 

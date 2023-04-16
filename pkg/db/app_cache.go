@@ -2,10 +2,10 @@ package db
 
 // stores all cache for thumuht
 type AppCache struct {
-	Sessions    Cache[string, int]    // map token -> userId
-	PostLike    Cache[int, int]       // map postid -> likes
-	CommentLike Cache[int, int]       // map commentid -> likes
-	PostView    Cache[int, int]       // map postid -> view number
+	Sessions    Cache[string, int] // map token -> userId
+	PostLike    Cache[int, int]    // map postid -> likes
+	CommentLike Cache[int, int]    // map commentid -> likes
+	PostView    Cache[int, int]    // map postid -> view number
 }
 
 func NewAppCache() AppCache {

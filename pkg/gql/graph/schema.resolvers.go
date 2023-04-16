@@ -9,7 +9,6 @@ import (
 	"backend/pkg/gql/graph/model"
 	"backend/pkg/utils"
 	"context"
-	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -190,6 +189,39 @@ func (r *mutationResolver) LikeComment(ctx context.Context, input int) (bool, er
 	return true, nil
 }
 
+// NewBookmarkList is the resolver for the newBookmarkList field.
+func (r *mutationResolver) NewBookmarkList(ctx context.Context, input string) (*db.BookmarkList, error) {
+	gctx, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cTime := time.Now()
+	bookmarkList := &db.BookmarkList{
+		List:       input,
+		UserID:     int32(gctx.GetInt("userId")),
+		CreatedAt:  cTime,
+		UpdatedAt:  cTime,
+	}
+	_, err = r.DB.NewInsert().Model(bookmarkList).Returning("*").Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bookmarkList, nil
+}
+
+// MarkPost is the resolver for the markPost field.
+func (r *mutationResolver) MarkPost(ctx context.Context, input model.NewMarkPost) (bool, error) {
+	markPost := &db.Bookmark{
+		PostID:     int32(input.PostID),
+		BookmarkListID:     int32(input.BookmarkListID),
+	}
+	_, err := r.DB.NewInsert().Model(markPost).Returning("*").Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]db.User, error) {
 	var users []db.User
@@ -277,12 +309,26 @@ func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput
 
 // Follow is the resolver for the follow field.
 func (r *userResolver) Follow(ctx context.Context, obj *db.User) ([]*db.User, error) {
-	panic(fmt.Errorf("not implemented: Follow - follow"))
+	// find all user that obj follows
+	var users []*db.User
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+		Where("user_id IN (SELECT follow_id FROM follow WHERE user_id = ?)", obj.ID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // Follower is the resolver for the follower field.
 func (r *userResolver) Follower(ctx context.Context, obj *db.User) ([]*db.User, error) {
-	panic(fmt.Errorf("not implemented: Follower - follower"))
+	// follow all user that follows obj
+	var users []*db.User
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+		Where("user_id IN (SELECT user_id FROM follow WHERE follow_id = ?)", obj.ID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // Mutation returns MutationResolver implementation.
