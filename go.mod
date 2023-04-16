@@ -3,7 +3,7 @@ module backend
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.26
+	github.com/99designs/gqlgen v0.17.29
 	github.com/gin-gonic/gin v1.9.0
 	github.com/uptrace/bun/dialect/sqlitedialect v1.1.12
 	github.com/uptrace/bun/extra/bundebug v1.1.12

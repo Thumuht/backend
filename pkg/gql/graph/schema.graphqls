@@ -30,6 +30,8 @@ type User @goModel(
 
   post: [Post]
   comment: [Comment]
+  follow: [User]
+  follower: [User]
 }
 
 type Post @goModel(
@@ -95,6 +97,7 @@ type Mutation {
   createUser (input: NewUser!): User!
   createPost(input: NewPost!): Post!                     @login
   createComment(input: NewComment!): Comment!            @login
+  followUser(input: Int!): Boolean!                      @login
 
   deleteUser(input: Int!): Boolean!                      @login
   deletePost(input: Int!): Boolean!                      @login

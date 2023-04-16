@@ -243,6 +243,38 @@ func TestCache(t *testing.T) {
 	}
 }
 
+func TestCacheCSP(t *testing.T) {
+	browse := `mutation {
+		likePost(input: 1)
+	}`
+
+	getlike := `query {
+		postDetail(input: 1) {
+			like
+		}
+	}`
+
+	hdrs := map[string]string{"Token": utoken}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 20000; i++ {
+		wg.Add(1)
+		// i must be in parameter
+		go func() {
+			defer wg.Done()
+			_, _ = SendAndGetGQL(browse, hdrs)
+		}()
+	}
+
+	wg.Wait()
+
+	app.Cache.PostLike.Flush()
+	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":40000}}}`, nil)
+	if err != nil || !ok {
+		t.Error("testcache failed")
+	}
+}
+
 func TestFS(t *testing.T) {
 	s := utils.GenRandStr(2000)
 	err := os.WriteFile("testthisfile", []byte(s), 0777)
@@ -284,9 +316,8 @@ func TestFS(t *testing.T) {
 			}
 		}
 	}`
-
-	bad, _ := SendAndCompareGQL(qpost, `{"data":{"postDetail":{"attachment":[{"parentId":1,"parentType":"post","fileName":"testthisfile"}]}}}`, nil)
-	if bad {
+	ok, _ := SendAndCompareGQL(qpost, `{"data":{"postDetail":{"attachment":[{"parentId":1,"parentType":"post","fileName":"testthisfile"}]}}}`, nil)
+	if !ok {
 		t.Error("attachment did not goto database")
 	}
 

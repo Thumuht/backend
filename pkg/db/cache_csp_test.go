@@ -10,8 +10,8 @@ import (
 )
 
 // Simple Test for Mapcache
-func TestMapCacheSetGet(t *testing.T) {
-	c := NewMapCache[string, int]()
+func TestMapCacheCSPSetGet(t *testing.T) {
+	c := NewMapCacheCSP[string, int]()
 	c.Set("hello", 123)
 	c.Set("world, 456", 456)
 	v, ok := c.Get("hello")
@@ -38,8 +38,8 @@ func TestMapCacheSetGet(t *testing.T) {
 }
 
 // Concurrency Test for Mapcache
-func TestMapCacheConcurrency(t *testing.T) {
-	c := NewMapCache[string, int]()
+func TestMapCacheCSPConcurrency(t *testing.T) {
+	c := NewMapCacheCSP[string, int]()
 	var wg sync.WaitGroup
 
 	for i := 0; i < 10000; i++ {
@@ -59,18 +59,18 @@ func TestMapCacheConcurrency(t *testing.T) {
 }
 
 // Test Flush
-func TestMapCacheFlush(t *testing.T) {
+func TestMapCacheCSPFlush(t *testing.T) {
 	ctx := context.Background()
 	testpdb, err := InitSQLiteDB()
 	if err != nil {
 		t.Error("cannot new db")
 	}
-	mc := NewMapCache[string, int]()
-	mc.SetFlushTarget("test_like", "name", "like", testpdb)
+	mc := NewMapCacheCSP[string, int]()
+	mc.SetFlushTarget("test_like_csp", "name", "like", testpdb)
 
 	// test relation
 	type TestLike struct {
-		bun.BaseModel `bun:"table:test_like"`
+		bun.BaseModel `bun:"table:test_like_csp"`
 
 		Name string `bun:"name"`
 		Like int32  `bun:"like"`
