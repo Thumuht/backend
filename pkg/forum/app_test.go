@@ -275,7 +275,6 @@ func TestCacheCSP(t *testing.T) {
 	}
 }
 
-// TODO(wj): filesystem test
 func TestFS(t *testing.T) {
 	s := utils.GenRandStr(2000)
 	err := os.WriteFile("testthisfile", []byte(s), 0777)
