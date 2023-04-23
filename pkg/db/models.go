@@ -90,6 +90,7 @@ type Message struct {
 	UserFrom  int32     `json:"userFrom" bun:"user_from"`
 	UserTo    int32     `json:"userTo" bun:"user_to"`
 	Content   string    `json:"content" bun:"content"`
+	IsNew     bool      `json:"isNew" bun:"is_new"`
 	CreatedAt time.Time `json:"createdAt" bun:"created_at"`
 }
 

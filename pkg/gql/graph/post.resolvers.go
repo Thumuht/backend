@@ -158,6 +158,7 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 	if err != nil {
 		return nil, err
 	}
+	// TODO: follow & tag
 
 	// range is a copy..
 	for i := range posts {

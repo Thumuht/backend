@@ -93,6 +93,11 @@ type UpdateUser struct {
 	Password *string `json:"password,omitempty"`
 }
 
+type MyTime struct {
+	UnixTime  int    `json:"unixTime"`
+	TimeStamp string `json:"timeStamp"`
+}
+
 type AttachmentParent string
 
 const (

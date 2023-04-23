@@ -148,18 +148,28 @@ func (r *mutationResolver) UnblockUser(ctx context.Context, input int) (bool, er
 }
 
 // SendMessage is the resolver for the sendMessage field.
+// TODO： send like, send follow
 func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageInput) (bool, error) {
 	meId, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	_, err = r.DB.NewInsert().Model(&db.Message{
+	msg := &db.Message{
 		UserFrom: int32(meId),
 		UserTo:   int32(input.ToID),
 		Content:  input.Content,
-	}).Exec(ctx)
+		IsNew:    true,
+	}
 
+	if ch, ok := r.Cache.Notifier.Get(input.ToID); ok {
+		go func ()  {
+			*ch <- msg
+		}()
+		msg.IsNew = false
+	}
+
+	_, err = r.DB.NewInsert().Model(msg).Exec(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -183,6 +193,28 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginSession) 
 	token := utils.GenToken()
 	r.Cache.Sessions.Set(token, int(user.ID))
 
+	// query all new message from db, and send to user
+	go func() {
+		var msgs []db.Message
+		err := r.DB.NewSelect().Model(&msgs).Where("user_to = ?", user.ID).Where("is_new = ?", true).Scan(ctx)
+		if err != nil {
+			return
+		}
+
+		if ch, ok := r.Cache.Notifier.Get(int(user.ID)); ok {
+			for _, msg := range msgs {
+				*ch <- &msg
+			}
+		}
+
+		// update them as not new
+		_, err = r.DB.NewUpdate().Model((*db.Message)(nil)).Set("is_new = ?", false).
+			Where("user_to = ?", user.ID).Where("is_new = ?", true).Exec(ctx)
+		if err != nil {
+			return
+		}
+	}()
+
 	return token, nil
 }
 
@@ -192,6 +224,8 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("cannot get gin context, access denied: %w", err)
 	}
+
+	r.Cache.Notifier.Remove(gctx.GetInt("userId"))
 
 	token := gctx.GetHeader("Token")
 	return true, r.Cache.Sessions.Remove(token)
@@ -234,6 +268,45 @@ func (r *queryResolver) Me(ctx context.Context) (*db.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// MyMessage is the resolver for the myMessage field.
+func (r *queryResolver) MyMessage(ctx context.Context, from *int, offset *int, limit *int) ([]db.Message, error) {
+	// if from = nil, get all message
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgs []db.Message
+	q := r.DB.NewSelect().Model(&msgs).Where("user_to = ? OR user_froom = ?", meId, meId).
+		Order("created_at DESC")
+	if from != nil {
+		q = q.Where("user_from = ?", from)
+	}
+	err = q.Offset(*offset).Limit(*limit).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return msgs, nil
+}
+
+// MyMessageUser is the resolver for the myMessageUser field.
+func (r *queryResolver) MyMessageUser(ctx context.Context) ([]db.User, error) {
+	// select distinct users from message
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []db.User
+	err = r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+		Where("user_id IN (SELECT DISTINCT user_from FROM message WHERE user_to = ? OR user_from = ?)", meId, meId).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // Follow is the resolver for the follow field.

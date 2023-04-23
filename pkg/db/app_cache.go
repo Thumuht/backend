@@ -6,6 +6,7 @@ type AppCache struct {
 	PostLike    Cache[int, int]    // map postid -> likes
 	CommentLike Cache[int, int]    // map commentid -> likes
 	PostView    Cache[int, int]    // map postid -> view number
+	Notifier	Cache[int, chan *Message]
 }
 
 func NewAppCache() AppCache {
@@ -14,5 +15,6 @@ func NewAppCache() AppCache {
 		PostLike:    NewMapCache[int, int](),
 		CommentLike: NewMapCache[int, int](),
 		PostView:    NewMapCache[int, int](),
+		Notifier:    NewMapCacheCSP[int, chan *Message](),
 	}
 }
