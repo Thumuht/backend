@@ -24,10 +24,10 @@ type Message @goModel(
   model: "backend/pkg/db.Message"
 ){
   messageId: Int!
-  userFrom: User!
-  userTo: User!
+  userFrom: Int!
+  userTo: Int!
   content: String!
-  createdAt: String!
+  createdAt: Time
 }
 
 input NewUser {

@@ -72,6 +72,27 @@ func (r *mutationResolver) LikeComment(ctx context.Context, input int) (bool, er
 	return true, nil
 }
 
+// DislikeComment is the resolver for the dislikeComment field.
+func (r *mutationResolver) DislikeComment(ctx context.Context, input int) (bool, error) {
+	// first see cache
+	// if not exists, fetch from db and write to cache
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
+
+	if like, ok := r.Cache.CommentLike.Get(input); ok {
+		r.Cache.CommentLike.Set(input, *like-1)
+	} else {
+		var comment db.Comment
+		err := r.DB.NewSelect().Model(&comment).Where("comment_id = ?", input).Scan(ctx)
+		if err != nil {
+			return false, err
+		}
+		r.Cache.CommentLike.Set(input, int(comment.Like)-1)
+	}
+
+	return true, nil
+}
+
 // Comment is the resolver for the comment field.
 func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error) {
 	var comments []db.Comment

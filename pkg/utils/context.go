@@ -42,3 +42,12 @@ func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 	return gc, nil
 
 }
+
+// get me
+func GetMe(ctx context.Context) (int, error) {
+	gctx, err := GinContextFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return gctx.GetInt("userId"), nil
+}

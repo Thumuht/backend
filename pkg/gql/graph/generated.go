@@ -43,7 +43,6 @@ type ResolverRoot interface {
 	Message() MessageResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
-	Tag() TagResolver
 	User() UserResolver
 }
 
@@ -94,6 +93,7 @@ type ComplexityRoot struct {
 		DeleteComment   func(childComplexity int, input int) int
 		DeletePost      func(childComplexity int, postID int) int
 		DeleteUser      func(childComplexity int, input int) int
+		DislikeComment  func(childComplexity int, input int) int
 		DislikePost     func(childComplexity int, input int) int
 		FileUpload      func(childComplexity int, input *model.PostUpload) int
 		FollowUser      func(childComplexity int, input int) int
@@ -139,8 +139,8 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		TagId   func(childComplexity int) int
+		TagName func(childComplexity int) int
 	}
 
 	User struct {
@@ -165,16 +165,13 @@ type AttachmentResolver interface {
 }
 type MessageResolver interface {
 	MessageID(ctx context.Context, obj *db.Message) (int, error)
-	UserFrom(ctx context.Context, obj *db.Message) (*db.User, error)
-	UserTo(ctx context.Context, obj *db.Message) (*db.User, error)
-
-	CreatedAt(ctx context.Context, obj *db.Message) (string, error)
 }
 type MutationResolver interface {
 	CreateComment(ctx context.Context, input model.NewComment) (*db.Comment, error)
 	DeleteComment(ctx context.Context, input int) (bool, error)
 	UpdateComment(ctx context.Context, input model.UpdateComment) (*db.Comment, error)
 	LikeComment(ctx context.Context, input int) (bool, error)
+	DislikeComment(ctx context.Context, input int) (bool, error)
 	FileUpload(ctx context.Context, input *model.PostUpload) (bool, error)
 	CreatePost(ctx context.Context, input model.NewPost) (*db.Post, error)
 	UpdatePost(ctx context.Context, input model.UpdatePost) (*db.Post, error)
@@ -204,13 +201,7 @@ type QueryResolver interface {
 	GetUserByID(ctx context.Context, input int) (*db.User, error)
 	Me(ctx context.Context) (*db.User, error)
 }
-type TagResolver interface {
-	ID(ctx context.Context, obj *db.Tag) (int, error)
-	Name(ctx context.Context, obj *db.Tag) (*string, error)
-}
 type UserResolver interface {
-	Avatar(ctx context.Context, obj *db.User) (*string, error)
-
 	Follow(ctx context.Context, obj *db.User) ([]*db.User, error)
 	Follower(ctx context.Context, obj *db.User) ([]*db.User, error)
 	Block(ctx context.Context, obj *db.User) ([]*db.User, error)
@@ -468,6 +459,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteUser(childComplexity, args["input"].(int)), true
+
+	case "Mutation.dislikeComment":
+		if e.complexity.Mutation.DislikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_dislikeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DislikeComment(childComplexity, args["input"].(int)), true
 
 	case "Mutation.dislikePost":
 		if e.complexity.Mutation.DislikePost == nil {
@@ -826,19 +829,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity, args["input"].(model.GetUserInput)), true
 
-	case "Tag.id":
-		if e.complexity.Tag.ID == nil {
+	case "Tag.tagId":
+		if e.complexity.Tag.TagId == nil {
 			break
 		}
 
-		return e.complexity.Tag.ID(childComplexity), true
+		return e.complexity.Tag.TagId(childComplexity), true
 
-	case "Tag.name":
-		if e.complexity.Tag.Name == nil {
+	case "Tag.tagName":
+		if e.complexity.Tag.TagName == nil {
 			break
 		}
 
-		return e.complexity.Tag.Name(childComplexity), true
+		return e.complexity.Tag.TagName(childComplexity), true
 
 	case "User.about":
 		if e.complexity.User.About == nil {
@@ -1126,6 +1129,21 @@ func (ec *executionContext) field_Mutation_deletePost_args(ctx context.Context, 
 }
 
 func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_dislikeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -2398,7 +2416,7 @@ func (ec *executionContext) _Message_userFrom(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Message().UserFrom(rctx, obj)
+		return obj.UserFrom, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2410,47 +2428,19 @@ func (ec *executionContext) _Message_userFrom(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*db.User)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalNUser2ᚖbackendᚋpkgᚋdbᚐUser(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Message_userFrom(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "loginName":
-				return ec.fieldContext_User_loginName(ctx, field)
-			case "nickname":
-				return ec.fieldContext_User_nickname(ctx, field)
-			case "password":
-				return ec.fieldContext_User_password(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "about":
-				return ec.fieldContext_User_about(ctx, field)
-			case "avatar":
-				return ec.fieldContext_User_avatar(ctx, field)
-			case "post":
-				return ec.fieldContext_User_post(ctx, field)
-			case "comment":
-				return ec.fieldContext_User_comment(ctx, field)
-			case "follow":
-				return ec.fieldContext_User_follow(ctx, field)
-			case "follower":
-				return ec.fieldContext_User_follower(ctx, field)
-			case "block":
-				return ec.fieldContext_User_block(ctx, field)
-			case "bookmarkList":
-				return ec.fieldContext_User_bookmarkList(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2470,7 +2460,7 @@ func (ec *executionContext) _Message_userTo(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Message().UserTo(rctx, obj)
+		return obj.UserTo, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2482,47 +2472,19 @@ func (ec *executionContext) _Message_userTo(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*db.User)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalNUser2ᚖbackendᚋpkgᚋdbᚐUser(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Message_userTo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "loginName":
-				return ec.fieldContext_User_loginName(ctx, field)
-			case "nickname":
-				return ec.fieldContext_User_nickname(ctx, field)
-			case "password":
-				return ec.fieldContext_User_password(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "about":
-				return ec.fieldContext_User_about(ctx, field)
-			case "avatar":
-				return ec.fieldContext_User_avatar(ctx, field)
-			case "post":
-				return ec.fieldContext_User_post(ctx, field)
-			case "comment":
-				return ec.fieldContext_User_comment(ctx, field)
-			case "follow":
-				return ec.fieldContext_User_follow(ctx, field)
-			case "follower":
-				return ec.fieldContext_User_follower(ctx, field)
-			case "block":
-				return ec.fieldContext_User_block(ctx, field)
-			case "bookmarkList":
-				return ec.fieldContext_User_bookmarkList(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2586,31 +2548,28 @@ func (ec *executionContext) _Message_createdAt(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Message().CreatedAt(rctx, obj)
+		return obj.CreatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Message_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Message",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2946,6 +2905,81 @@ func (ec *executionContext) fieldContext_Mutation_likeComment(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_likeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_dislikeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_dislikeComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DislikeComment(rctx, fc.Args["input"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Login == nil {
+				return nil, errors.New("directive login is not implemented")
+			}
+			return ec.directives.Login(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_dislikeComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_dislikeComment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -5037,10 +5071,10 @@ func (ec *executionContext) fieldContext_Post_tag(ctx context.Context, field gra
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tag_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tag_name(ctx, field)
+			case "tagId":
+				return ec.fieldContext_Tag_tagId(ctx, field)
+			case "tagName":
+				return ec.fieldContext_Tag_tagName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -5748,8 +5782,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Tag_id(ctx context.Context, field graphql.CollectedField, obj *db.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_id(ctx, field)
+func (ec *executionContext) _Tag_tagId(ctx context.Context, field graphql.CollectedField, obj *db.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_tagId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5762,7 +5796,7 @@ func (ec *executionContext) _Tag_id(ctx context.Context, field graphql.Collected
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Tag().ID(rctx, obj)
+		return obj.TagId, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5774,17 +5808,17 @@ func (ec *executionContext) _Tag_id(ctx context.Context, field graphql.Collected
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Tag_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Tag_tagId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Tag",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -5792,8 +5826,8 @@ func (ec *executionContext) fieldContext_Tag_id(ctx context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Tag_name(ctx context.Context, field graphql.CollectedField, obj *db.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_name(ctx, field)
+func (ec *executionContext) _Tag_tagName(ctx context.Context, field graphql.CollectedField, obj *db.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_tagName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5806,7 +5840,7 @@ func (ec *executionContext) _Tag_name(ctx context.Context, field graphql.Collect
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Tag().Name(rctx, obj)
+		return obj.TagName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5815,17 +5849,17 @@ func (ec *executionContext) _Tag_name(ctx context.Context, field graphql.Collect
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Tag_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Tag_tagName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Tag",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -6099,7 +6133,7 @@ func (ec *executionContext) _User_avatar(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().Avatar(rctx, obj)
+		return obj.Avatar, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6108,17 +6142,17 @@ func (ec *executionContext) _User_avatar(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_avatar(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -9136,45 +9170,19 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 
 			})
 		case "userFrom":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Message_userFrom(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Message_userFrom(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "userTo":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Message_userTo(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Message_userTo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "content":
 
 			out.Values[i] = ec._Message_content(ctx, field, obj)
@@ -9183,25 +9191,9 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Message_createdAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
+			out.Values[i] = ec._Message_createdAt(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9263,6 +9255,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_likeComment(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dislikeComment":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_dislikeComment(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -9730,43 +9731,17 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Tag")
-		case "id":
-			field := field
+		case "tagId":
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Tag_id(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Tag_tagId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
+		case "tagName":
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
+			out.Values[i] = ec._Tag_tagName(ctx, field, obj)
 
-			})
-		case "name":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Tag_name(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9819,22 +9794,9 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_about(ctx, field, obj)
 
 		case "avatar":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._User_avatar(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec._User_avatar(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "post":
 
 			out.Values[i] = ec._User_post(ctx, field, obj)

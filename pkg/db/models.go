@@ -15,6 +15,7 @@ type User struct {
 	Password  string `json:"password" bun:"pwhash"`
 	Email     string `json:"email" bun:"email"`
 	About     string `json:"about" bun:"about"`
+	Avatar    string `json:"avatar" bun:"avatar"`
 
 	Post         []*Post         `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
 	Comment      []*Comment      `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
@@ -26,21 +27,21 @@ type User struct {
 type Post struct {
 	bun.BaseModel `bun:"table:post"`
 
-	ID        int32     `json:"id" bun:"post_id,pk,autoincrement"`
-	Title     string    `json:"title" bun:"title"`
-	Content   string    `json:"content" bun:"content"`
-	Position  string    `json:"position" bun:"position"`
-	View      int32     `json:"view" bun:"view"`
-	Like      int32     `json:"like" bun:"like"`
-	CommentsNum int32   `json:"commentsNum" bun:"comments_num"`
-	UserID    int32     `json:"userId" bun:"post_userid"`
-	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
-	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
+	ID          int32     `json:"id" bun:"post_id,pk,autoincrement"`
+	Title       string    `json:"title" bun:"title"`
+	Content     string    `json:"content" bun:"content"`
+	Position    string    `json:"position" bun:"position"`
+	View        int32     `json:"view" bun:"view"`
+	Like        int32     `json:"like" bun:"like"`
+	CommentsNum int32     `json:"commentsNum" bun:"comments_num"`
+	UserID      int32     `json:"userId" bun:"post_userid"`
+	CreatedAt   time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
+	UpdatedAt   time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 
 	User       *User         `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
 	Comment    []*Comment    `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
 	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:post_id=attachment_parentid,join:type=parent_type,polymorphic"`
-	Tag []*Tag `json:"tag" bun:"m2m:post_tag,join:Tag=Post"`
+	Tag        []*Tag        `json:"tag" bun:"m2m:post_tag,join:Tag=Post"`
 }
 
 type Comment struct {
@@ -79,17 +80,17 @@ type Follow struct {
 	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from=user_id,on_delete:cascade"`
 	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to=user_id,on_delete:cascade"`
 
-	CreatedAt int32 `bun:",nullzero,notnull,default:current_timestamp"`
+	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
 type Message struct {
 	bun.BaseModel `bun:"table:message"`
 
-	ID       int32  `json:"messageId" bun:"message_id,pk"`
-	UserFrom int32  `json:"userFrom" bun:"user_from"`
-	UserTo   int32  `json:"userTo" bun:"user_to"`
-	Content  string `json:"content" bun:"content"`
-	CreateAt int32  `json:"createAt" bun:"create_at"`
+	ID        int32     `json:"messageId" bun:"message_id,pk"`
+	UserFrom  int32     `json:"userFrom" bun:"user_from"`
+	UserTo    int32     `json:"userTo" bun:"user_to"`
+	Content   string    `json:"content" bun:"content"`
+	CreatedAt time.Time `json:"createdAt" bun:"created_at"`
 }
 
 type Bookmark struct {

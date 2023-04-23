@@ -52,6 +52,7 @@ type Mutation {
   updateComment(input: UpdateComment!): Comment!         @login
 
   likeComment(input: Int!): Boolean!                     @login
+  dislikeComment(input: Int!): Boolean!                  @login
 }
 
 enum CommentOrderBy {

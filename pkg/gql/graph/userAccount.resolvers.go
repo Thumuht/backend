@@ -16,22 +16,7 @@ import (
 
 // MessageID is the resolver for the messageId field.
 func (r *messageResolver) MessageID(ctx context.Context, obj *db.Message) (int, error) {
-	panic(fmt.Errorf("not implemented: MessageID - messageId"))
-}
-
-// UserFrom is the resolver for the userFrom field.
-func (r *messageResolver) UserFrom(ctx context.Context, obj *db.Message) (*db.User, error) {
-	panic(fmt.Errorf("not implemented: UserFrom - userFrom"))
-}
-
-// UserTo is the resolver for the userTo field.
-func (r *messageResolver) UserTo(ctx context.Context, obj *db.Message) (*db.User, error) {
-	panic(fmt.Errorf("not implemented: UserTo - userTo"))
-}
-
-// CreatedAt is the resolver for the createdAt field.
-func (r *messageResolver) CreatedAt(ctx context.Context, obj *db.Message) (string, error) {
-	panic(fmt.Errorf("not implemented: CreatedAt - createdAt"))
+	return int(obj.ID), nil
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -75,7 +60,21 @@ func (r *mutationResolver) FollowUser(ctx context.Context, input int) (bool, err
 
 // UnfollowUser is the resolver for the unfollowUser field.
 func (r *mutationResolver) UnfollowUser(ctx context.Context, input int) (bool, error) {
-	panic(fmt.Errorf("not implemented: UnfollowUser - unfollowUser"))
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.DB.NewDelete().Model((*db.Follow)(nil)).
+		Where("follow_from_id = ?", meId).
+		Where("follow_to_id = ?", input).
+		Exec(ctx)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -89,22 +88,83 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, input int) (bool, err
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUser) (*db.User, error) {
-	panic(fmt.Errorf("not implemented: UpdateUser - updateUser"))
+	// get userId from context
+	gctx, err := utils.GinContextFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	user := &db.User{
+		ID:       int32(gctx.GetInt("userId")),
+		Nickname: *input.Nickname,
+		Password: *input.Password,
+		Email:    *input.Email,
+		About:    *input.About,
+		Avatar:   *input.Avatar,
+	}
+	_, err = r.DB.NewUpdate().Model(user).OmitZero().Returning("*").
+		Where("user_id = ?", user.ID).Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // BlockUser is the resolver for the blockUser field.
 func (r *mutationResolver) BlockUser(ctx context.Context, input int) (bool, error) {
-	panic(fmt.Errorf("not implemented: BlockUser - blockUser"))
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.DB.NewInsert().Model(&db.Block{
+		BlockFromId: int32(meId),
+		BlockToId:   int32(input),
+	}).Exec(ctx)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // UnblockUser is the resolver for the unblockUser field.
 func (r *mutationResolver) UnblockUser(ctx context.Context, input int) (bool, error) {
-	panic(fmt.Errorf("not implemented: UnblockUser - unblockUser"))
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.DB.NewDelete().Model((*db.Block)(nil)).
+		Where("block_from_id = ?", meId).
+		Where("block_to_id = ?", input).
+		Exec(ctx)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // SendMessage is the resolver for the sendMessage field.
 func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: SendMessage - sendMessage"))
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.DB.NewInsert().Model(&db.Message{
+		UserFrom: int32(meId),
+		UserTo:   int32(input.ToID),
+		Content:  input.Content,
+	}).Exec(ctx)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Login is the resolver for the login field.
@@ -153,17 +213,27 @@ func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]
 
 // GetUserByID is the resolver for the getUserById field.
 func (r *queryResolver) GetUserByID(ctx context.Context, input int) (*db.User, error) {
-	panic(fmt.Errorf("not implemented: GetUserByID - getUserById"))
+	var user db.User
+	err := r.DB.NewSelect().Model(&user).Where("user_id = ?", input).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*db.User, error) {
-	panic(fmt.Errorf("not implemented: Me - me"))
-}
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-// Avatar is the resolver for the avatar field.
-func (r *userResolver) Avatar(ctx context.Context, obj *db.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: Avatar - avatar"))
+	var user db.User
+	err = r.DB.NewSelect().Model(&user).Where("user_id = ?", meId).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // Follow is the resolver for the follow field.
@@ -192,7 +262,14 @@ func (r *userResolver) Follower(ctx context.Context, obj *db.User) ([]*db.User, 
 
 // Block is the resolver for the block field.
 func (r *userResolver) Block(ctx context.Context, obj *db.User) ([]*db.User, error) {
-	panic(fmt.Errorf("not implemented: Block - block"))
+	// find all user that obj blocks
+	var users []*db.User
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+		Where("user_id IN (SELECT block_to_id FROM block WHERE block_from = ?)", obj.ID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // Message returns MessageResolver implementation.

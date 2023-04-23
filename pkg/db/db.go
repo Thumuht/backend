@@ -91,7 +91,6 @@ func InitModels(db *bun.DB) error {
 		return err
 	}
 
-
 	// new block model
 	_, err = db.NewCreateTable().Model((*Block)(nil)).Exec(ctx)
 	if err != nil {

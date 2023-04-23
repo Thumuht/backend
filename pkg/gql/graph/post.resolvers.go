@@ -9,7 +9,6 @@ import (
 	"backend/pkg/gql/graph/model"
 	"backend/pkg/utils"
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -93,7 +92,11 @@ func (r *mutationResolver) MarkPost(ctx context.Context, input model.NewMarkPost
 
 // UnmarkPost is the resolver for the unmarkPost field.
 func (r *mutationResolver) UnmarkPost(ctx context.Context, input model.NewMarkPost) (bool, error) {
-	panic(fmt.Errorf("not implemented: UnmarkPost - unmarkPost"))
+	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("post_id = ? AND bookmark_list_id = ?", input.PostID, input.BookmarkListID).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // LikePost is the resolver for the likePost field.
@@ -119,13 +122,36 @@ func (r *mutationResolver) LikePost(ctx context.Context, input int) (bool, error
 
 // DislikePost is the resolver for the dislikePost field.
 func (r *mutationResolver) DislikePost(ctx context.Context, input int) (bool, error) {
-	panic(fmt.Errorf("not implemented: DislikePost - dislikePost"))
+	// first see cache
+	// if not exists, fetch from db and write to cache
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
+
+	if like, ok := r.Cache.PostLike.Get(input); ok {
+		r.Cache.PostLike.Set(input, *like-1)
+	} else {
+		var post db.Post
+		err := r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
+		if err != nil {
+			return false, err
+		}
+		r.Cache.PostLike.Set(input, int(post.Like)-1)
+	}
+
+	return true, nil
 }
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]*db.Post, error) {
-		var posts []*db.Post
-	err := r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
+	var posts []*db.Post
+	// get me if login
+	meId, err := utils.GetMe(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
+		Where("post_userid NOT IN (SELECT block_to FROM block WHERE block_from = ?)", meId).
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).Scan(ctx)
 
@@ -173,18 +199,3 @@ func (r *queryResolver) PostDetail(ctx context.Context, input int) (*db.Post, er
 	r.Cache.PostView.Set(input, int(post.View))
 	return &post, nil
 }
-
-// ID is the resolver for the id field.
-func (r *tagResolver) ID(ctx context.Context, obj *db.Tag) (int, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
-}
-
-// Name is the resolver for the name field.
-func (r *tagResolver) Name(ctx context.Context, obj *db.Tag) (*string, error) {
-	panic(fmt.Errorf("not implemented: Name - name"))
-}
-
-// Tag returns TagResolver implementation.
-func (r *Resolver) Tag() TagResolver { return &tagResolver{r} }
-
-type tagResolver struct{ *Resolver }

@@ -20,8 +20,8 @@ type Post @goModel(
 type Tag @goModel(
   model: "backend/pkg/db.Tag"
 ){
-  id: Int!
-  name: String
+  tagId: Int!
+  tagName: String
 }
 
 type BookmarkList @goModel(
