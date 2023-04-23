@@ -1,0 +1,102 @@
+directive @login on FIELD_DEFINITION
+
+""" 用户 """
+type User @goModel(
+  model: "backend/pkg/db.User"
+){
+  id: Int!
+  loginName: String!
+  nickname: String
+  password: String
+  email: String
+  about: String
+  avatar: String
+
+  post: [Post]
+  comment: [Comment]
+  follow: [User]
+  follower: [User]
+  block: [User]
+  bookmarkList: [BookmarkList]
+}
+
+type Message @goModel(
+  model: "backend/pkg/db.Message"
+){
+  messageId: Int!
+  userFrom: User!
+  userTo: User!
+  content: String!
+  createdAt: String!
+}
+
+input NewUser {
+  loginName: String!
+  password: String!
+}
+
+input UpdateUser {
+  nickname: String
+  email: String
+  about: String
+  avatar: String
+  password: String
+}
+
+enum UserOrderBy {
+  user_id
+  nickname
+}
+
+input GetUserInput {
+  limit: Int! = 10
+  offset: Int! = 0
+  orderBy: UserOrderBy! = user_id
+  order: Order! = ASC
+}
+
+input LoginSession {
+  loginName: String!
+  password: String!
+}
+
+input MessageInput {
+  toId: Int!
+  content: String!
+}
+
+extend type Query {
+  """ 查询用户 """
+  users(input: GetUserInput!): [User!]!
+  """ 查询用户 """
+  getUserById(input: Int!): User!
+
+  """ 获取本人信息 """
+  me: User!                                             @login
+}
+
+extend type Mutation {
+  """ 注册帐号，设置密码 """
+  createUser (input: NewUser!): User!
+
+  """ 对用户进行关注和取消关注 """
+  followUser(input: Int!): Boolean!                      @login
+  unfollowUser(input: Int!): Boolean!                    @login
+
+  """ 删除用户 """
+  deleteUser(input: Int!): Boolean!                      @login
+  """ 修改用户名，头像，简介，密码  """
+  updateUser(input: UpdateUser!): User!                  @login
+
+  """屏蔽用户"""
+  blockUser(input: Int!): Boolean!                       @login
+  unblockUser(input: Int!): Boolean!                     @login
+
+  """ 私信 """
+  sendMessage(input: MessageInput!): Boolean!            @login
+
+
+  """ 登录 """
+  login(input: LoginSession!): String!
+  logout: Boolean!                                       @login
+}

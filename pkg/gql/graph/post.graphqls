@@ -1,0 +1,97 @@
+type Post @goModel(
+  model: "backend/pkg/db.Post"
+){
+  id: Int!
+  title: String
+  content: String
+  view: Int
+  like: Int
+  comments_num: Int
+  position: String
+  createdAt: Time
+  updatedAt: Time
+
+  user: User
+  comment: [Comment]
+  attachment: [Attachment]
+  tag: [Tag]
+}
+
+type Tag @goModel(
+  model: "backend/pkg/db.Tag"
+){
+  id: Int!
+  name: String
+}
+
+type BookmarkList @goModel(
+  model: "backend/pkg/db.BookmarkList"
+){
+  id: Int!
+  list: String
+  createdAt: Time
+  updatedAt: Time
+
+  user: User
+  post: [Post]
+}
+
+input NewPost {
+  userId: Int!
+  title: String
+  content: String
+  tag: [String]
+}
+
+input UpdatePost {
+  postId: Int!
+  title: String
+  content: String
+}
+
+input NewMarkPost {
+  postId: Int!
+  bookmarkListId: Int!
+}
+
+enum PostOrderBy {
+  post_id
+  title
+  content
+  view
+  like
+  userId
+  created_at
+  updated_at
+  comments_num
+}
+
+input GetPostInput {
+  limit: Int! = 10
+  offset: Int! = 0
+  orderBy: PostOrderBy! = post_id
+  order: Order! = ASC
+  followed: Boolean = false
+  """all = true 意味着不用 tags"""
+  all: Boolean = true
+  tags: [String]
+}
+
+extend type Query {
+  posts(input: GetPostInput!): [Post]
+  postDetail(input: Int!): Post
+}
+
+extend type Mutation {
+  """ 文字 """
+  createPost(input: NewPost!): Post!                     @login
+  updatePost(input: UpdatePost!): Post!                  @login
+  deletePost(postId: Int!): Boolean!                     @login
+  newBookmarkList(input: String!): BookmarkList!         @login
+
+  markPost(input: NewMarkPost!): Boolean!                @login
+  unmarkPost(input: NewMarkPost!): Boolean!              @login
+
+  likePost(input: Int!): Boolean!                        @login
+  dislikePost(input: Int!): Boolean!                     @login
+}
