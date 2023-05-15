@@ -163,7 +163,7 @@ func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageI
 	}
 
 	if ch, ok := r.Cache.Notifier.Get(input.ToID); ok {
-		go func ()  {
+		go func() {
 			*ch <- msg
 		}()
 		msg.IsNew = false

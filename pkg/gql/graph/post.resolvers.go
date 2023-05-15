@@ -151,7 +151,7 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 	}
 
 	err = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
-		Where("post_userid NOT IN (SELECT block_to FROM block WHERE block_from = ?)", meId).
+		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId).
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).Scan(ctx)
 

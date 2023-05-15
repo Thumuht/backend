@@ -120,11 +120,11 @@ type BookmarkList struct {
 type Block struct {
 	bun.BaseModel `bun:"table:block"`
 
-	BlockFromId int32 `bun:"block_from,pk"`
-	BlockToId   int32 `bun:"block_to,pk"`
+	BlockFromId int32 `bun:"block_from_id,pk"`
+	BlockToId   int32 `bun:"block_to_id,pk"`
 
-	BlockFrom *User `json:"blockFrom" bun:"rel:belongs-to,join:block_from=user_id,on_delete:cascade"`
-	BlockTo   *User `json:"blockTo" bun:"rel:belongs-to,join:block_to=user_id,on_delete:cascade"`
+	BlockFrom *User `json:"blockFrom" bun:"rel:belongs-to,join:block_from_id=user_id,on_delete:cascade"`
+	BlockTo   *User `json:"blockTo" bun:"rel:belongs-to,join:block_to_id=user_id,on_delete:cascade"`
 
 	CreatedAt int32 `bun:",nullzero,notnull,default:current_timestamp"`
 }
