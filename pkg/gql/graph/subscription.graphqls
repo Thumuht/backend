@@ -1,0 +1,9 @@
+type myTime {
+  unixTime: Int!
+  timeStamp: String!
+}
+
+type Subscription {
+    currentTime: myTime!
+    messageToMe: Message!
+}

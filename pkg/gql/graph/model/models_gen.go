@@ -18,10 +18,14 @@ type GetCommentInput struct {
 }
 
 type GetPostInput struct {
-	Limit   int         `json:"limit"`
-	Offset  int         `json:"offset"`
-	OrderBy PostOrderBy `json:"orderBy"`
-	Order   Order       `json:"order"`
+	Limit    int         `json:"limit"`
+	Offset   int         `json:"offset"`
+	OrderBy  PostOrderBy `json:"orderBy"`
+	Order    Order       `json:"order"`
+	Followed *bool       `json:"followed,omitempty"`
+	// all = true 意味着不用 tags
+	All  *bool     `json:"all,omitempty"`
+	Tags []*string `json:"tags,omitempty"`
 }
 
 type GetUserInput struct {
@@ -36,16 +40,27 @@ type LoginSession struct {
 	Password  string `json:"password"`
 }
 
+type MessageInput struct {
+	ToID    int    `json:"toId"`
+	Content string `json:"content"`
+}
+
 type NewComment struct {
 	UserID  int     `json:"userId"`
 	PostID  int     `json:"postId"`
 	Content *string `json:"content,omitempty"`
 }
 
+type NewMarkPost struct {
+	PostID         int `json:"postId"`
+	BookmarkListID int `json:"bookmarkListId"`
+}
+
 type NewPost struct {
-	UserID  int     `json:"userId"`
-	Title   *string `json:"title,omitempty"`
-	Content *string `json:"content,omitempty"`
+	UserID  int       `json:"userId"`
+	Title   *string   `json:"title,omitempty"`
+	Content *string   `json:"content,omitempty"`
+	Tag     []*string `json:"tag,omitempty"`
 }
 
 type NewUser struct {
@@ -68,6 +83,19 @@ type UpdatePost struct {
 	PostID  int     `json:"postId"`
 	Title   *string `json:"title,omitempty"`
 	Content *string `json:"content,omitempty"`
+}
+
+type UpdateUser struct {
+	Nickname *string `json:"nickname,omitempty"`
+	Email    *string `json:"email,omitempty"`
+	About    *string `json:"about,omitempty"`
+	Avatar   *string `json:"avatar,omitempty"`
+	Password *string `json:"password,omitempty"`
+}
+
+type MyTime struct {
+	UnixTime  int    `json:"unixTime"`
+	TimeStamp string `json:"timeStamp"`
 }
 
 type AttachmentParent string
@@ -202,14 +230,15 @@ func (e Order) MarshalGQL(w io.Writer) {
 type PostOrderBy string
 
 const (
-	PostOrderByPostID    PostOrderBy = "post_id"
-	PostOrderByTitle     PostOrderBy = "title"
-	PostOrderByContent   PostOrderBy = "content"
-	PostOrderByView      PostOrderBy = "view"
-	PostOrderByLike      PostOrderBy = "like"
-	PostOrderByUserID    PostOrderBy = "userId"
-	PostOrderByCreatedAt PostOrderBy = "created_at"
-	PostOrderByUpdatedAt PostOrderBy = "updated_at"
+	PostOrderByPostID      PostOrderBy = "post_id"
+	PostOrderByTitle       PostOrderBy = "title"
+	PostOrderByContent     PostOrderBy = "content"
+	PostOrderByView        PostOrderBy = "view"
+	PostOrderByLike        PostOrderBy = "like"
+	PostOrderByUserID      PostOrderBy = "userId"
+	PostOrderByCreatedAt   PostOrderBy = "created_at"
+	PostOrderByUpdatedAt   PostOrderBy = "updated_at"
+	PostOrderByCommentsNum PostOrderBy = "comments_num"
 )
 
 var AllPostOrderBy = []PostOrderBy{
@@ -221,11 +250,12 @@ var AllPostOrderBy = []PostOrderBy{
 	PostOrderByUserID,
 	PostOrderByCreatedAt,
 	PostOrderByUpdatedAt,
+	PostOrderByCommentsNum,
 }
 
 func (e PostOrderBy) IsValid() bool {
 	switch e {
-	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByView, PostOrderByLike, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt:
+	case PostOrderByPostID, PostOrderByTitle, PostOrderByContent, PostOrderByView, PostOrderByLike, PostOrderByUserID, PostOrderByCreatedAt, PostOrderByUpdatedAt, PostOrderByCommentsNum:
 		return true
 	}
 	return false

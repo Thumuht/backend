@@ -18,38 +18,6 @@ scalar Time
 
 # GraphQL schema
 
-type User @goModel(
-  model: "backend/pkg/db.User"
-){
-  id: Int!
-  loginName: String!
-  nickname: String
-  password: String
-  email: String
-  about: String
-
-  post: [Post]
-  comment: [Comment]
-  follow: [User]
-  follower: [User]
-}
-
-type Post @goModel(
-  model: "backend/pkg/db.Post"
-){
-  id: Int!
-  title: String
-  content: String
-  view: Int
-  like: Int
-  createdAt: Time
-  updatedAt: Time
-
-  user: User
-  comment: [Comment]
-  attachment: [Attachment]
-}
-
 type Comment @goModel(
   model: "backend/pkg/db.Comment"
 ){
@@ -58,22 +26,10 @@ type Comment @goModel(
   like: Int
   createdAt: Time
   updatedAt: Time
-  
+
   user: User
   post: Post
   attachment: [Attachment]
-}
-
-
-input NewUser {
-  loginName: String!
-  password: String!
-}
-
-input NewPost {
-  userId: Int!
-  title: String
-  content: String
 }
 
 input NewComment {
@@ -82,47 +38,21 @@ input NewComment {
   content: String
 }
 
-input UpdatePost {
-  postId: Int!
-  title: String
-  content: String
-}
-
 input UpdateComment {
   commentId: Int!
   content: String
 }
 
-type Mutation {
-  createUser (input: NewUser!): User!
-  createPost(input: NewPost!): Post!                     @login
-  createComment(input: NewComment!): Comment!            @login
-  followUser(input: Int!): Boolean!                      @login
 
-  deleteUser(input: Int!): Boolean!                      @login
-  deletePost(input: Int!): Boolean!                      @login
+type Mutation {
+  createComment(input: NewComment!): Comment!            @login
+
   deleteComment(input: Int!): Boolean!                   @login
 
-  updatePost(input: UpdatePost!): Post!                  @login
   updateComment(input: UpdateComment!): Comment!         @login
-  likePost(input: Int!): Boolean!                        @login
+
   likeComment(input: Int!): Boolean!                     @login
-}
-
-enum UserOrderBy {
-  user_id
-  nickname
-}
-
-enum PostOrderBy {
-  post_id
-  title
-  content
-  view
-  like
-  userId
-  created_at
-  updated_at
+  dislikeComment(input: Int!): Boolean!                  @login
 }
 
 enum CommentOrderBy {
@@ -138,20 +68,6 @@ enum Order {
   DESC
 }
 
-input GetUserInput {
-  limit: Int! = 10
-  offset: Int! = 0
-  orderBy: UserOrderBy! = user_id
-  order: Order! = ASC
-}
-
-input GetPostInput {
-  limit: Int! = 10
-  offset: Int! = 0
-  orderBy: PostOrderBy! = post_id
-  order: Order! = ASC
-}
-
 input GetCommentInput {
   limit: Int! = 10
   offset: Int! = 0
@@ -161,8 +77,5 @@ input GetCommentInput {
 
 
 type Query {
-  users(input: GetUserInput!): [User!]!
-  posts(input: GetPostInput!): [Post!]!
-  postDetail(input: Int!): Post!
   comment(input: GetCommentInput!): [Comment!]!
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
@@ -65,6 +66,8 @@ func NewForum() *App {
 			},
 		}))
 
+	app.GQL.AddTransport(&transport.Websocket{})
+
 	app.Engine = gin.New()
 
 	SetRouter(&app)
@@ -78,6 +81,7 @@ func SetRouter(app *App) {
 	app.GET("/hello", router.HelloH())
 
 	app.POST("/query", router.GraphqlH(app.GQL))
+	app.GET("/query", router.GraphqlH(app.GQL))
 	app.GET("/", router.PlaygroundH())
 
 	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
