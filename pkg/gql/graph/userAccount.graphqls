@@ -65,6 +65,11 @@ input MessageInput {
   content: String!
 }
 
+type LoginInfo {
+  token: String!
+  userId: Int!
+}
+
 extend type Query {
   """ 查询用户 """
   users(input: GetUserInput!): [User!]!
@@ -101,6 +106,6 @@ extend type Mutation {
 
 
   """ 登录 """
-  login(input: LoginSession!): String!
+  login(input: LoginSession!): LoginInfo!
   logout: Boolean!                                       @login
 }

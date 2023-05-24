@@ -35,6 +35,11 @@ type GetUserInput struct {
 	Order   Order       `json:"order"`
 }
 
+type LoginInfo struct {
+	Token  string `json:"token"`
+	UserID int    `json:"userId"`
+}
+
 type LoginSession struct {
 	LoginName string `json:"loginName"`
 	Password  string `json:"password"`

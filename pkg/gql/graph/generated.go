@@ -79,6 +79,11 @@ type ComplexityRoot struct {
 		User       func(childComplexity int) int
 	}
 
+	LoginInfo struct {
+		Token  func(childComplexity int) int
+		UserID func(childComplexity int) int
+	}
+
 	Message struct {
 		Content   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -203,7 +208,7 @@ type MutationResolver interface {
 	BlockUser(ctx context.Context, input int) (bool, error)
 	UnblockUser(ctx context.Context, input int) (bool, error)
 	SendMessage(ctx context.Context, input model.MessageInput) (bool, error)
-	Login(ctx context.Context, input model.LoginSession) (string, error)
+	Login(ctx context.Context, input model.LoginSession) (*model.LoginInfo, error)
 	Logout(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
@@ -360,6 +365,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Comment.User(childComplexity), true
+
+	case "LoginInfo.token":
+		if e.complexity.LoginInfo.Token == nil {
+			break
+		}
+
+		return e.complexity.LoginInfo.Token(childComplexity), true
+
+	case "LoginInfo.userId":
+		if e.complexity.LoginInfo.UserID == nil {
+			break
+		}
+
+		return e.complexity.LoginInfo.UserID(childComplexity), true
 
 	case "Message.content":
 		if e.complexity.Message.Content == nil {
@@ -2476,6 +2495,94 @@ func (ec *executionContext) fieldContext_Comment_attachment(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _LoginInfo_token(ctx context.Context, field graphql.CollectedField, obj *model.LoginInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LoginInfo_token(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LoginInfo_token(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoginInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LoginInfo_userId(ctx context.Context, field graphql.CollectedField, obj *model.LoginInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LoginInfo_userId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LoginInfo_userId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LoginInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Message_messageId(ctx context.Context, field graphql.CollectedField, obj *db.Message) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Message_messageId(ctx, field)
 	if err != nil {
@@ -4511,9 +4618,9 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.LoginInfo)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNLoginInfo2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐLoginInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4523,7 +4630,13 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "token":
+				return ec.fieldContext_LoginInfo_token(ctx, field)
+			case "userId":
+				return ec.fieldContext_LoginInfo_userId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoginInfo", field.Name)
 		},
 	}
 	defer func() {
@@ -8873,34 +8986,38 @@ func (ec *executionContext) unmarshalInputGetCommentInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Limit = data
 		case "offset":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
-			it.Offset, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Offset = data
 		case "orderBy":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-			it.OrderBy, err = ec.unmarshalNCommentOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐCommentOrderBy(ctx, v)
+			data, err := ec.unmarshalNCommentOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐCommentOrderBy(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.OrderBy = data
 		case "order":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-			it.Order, err = ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
+			data, err := ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Order = data
 		}
 	}
 
@@ -8944,58 +9061,65 @@ func (ec *executionContext) unmarshalInputGetPostInput(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Limit = data
 		case "offset":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
-			it.Offset, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Offset = data
 		case "orderBy":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-			it.OrderBy, err = ec.unmarshalNPostOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐPostOrderBy(ctx, v)
+			data, err := ec.unmarshalNPostOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐPostOrderBy(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.OrderBy = data
 		case "order":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-			it.Order, err = ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
+			data, err := ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Order = data
 		case "followed":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("followed"))
-			it.Followed, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Followed = data
 		case "all":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("all"))
-			it.All, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.All = data
 		case "tags":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Tags = data
 		}
 	}
 
@@ -9033,34 +9157,38 @@ func (ec *executionContext) unmarshalInputGetUserInput(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Limit = data
 		case "offset":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
-			it.Offset, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Offset = data
 		case "orderBy":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-			it.OrderBy, err = ec.unmarshalNUserOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐUserOrderBy(ctx, v)
+			data, err := ec.unmarshalNUserOrderBy2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐUserOrderBy(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.OrderBy = data
 		case "order":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
-			it.Order, err = ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
+			data, err := ec.unmarshalNOrder2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐOrder(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Order = data
 		}
 	}
 
@@ -9085,18 +9213,20 @@ func (ec *executionContext) unmarshalInputLoginSession(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loginName"))
-			it.LoginName, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.LoginName = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
 		}
 	}
 
@@ -9121,18 +9251,20 @@ func (ec *executionContext) unmarshalInputMessageInput(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toId"))
-			it.ToID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ToID = data
 		case "content":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
-			it.Content, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Content = data
 		}
 	}
 
@@ -9157,26 +9289,29 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		case "postId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
-			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.PostID = data
 		case "content":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
-			it.Content, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Content = data
 		}
 	}
 
@@ -9201,18 +9336,20 @@ func (ec *executionContext) unmarshalInputNewMarkPost(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
-			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.PostID = data
 		case "bookmarkListId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bookmarkListId"))
-			it.BookmarkListID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.BookmarkListID = data
 		}
 	}
 
@@ -9237,34 +9374,38 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UserID = data
 		case "title":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Title = data
 		case "content":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
-			it.Content, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Content = data
 		case "tag":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tag"))
-			it.Tag, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Tag = data
 		}
 	}
 
@@ -9289,18 +9430,20 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loginName"))
-			it.LoginName, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.LoginName = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
 		}
 	}
 
@@ -9325,26 +9468,29 @@ func (ec *executionContext) unmarshalInputPostUpload(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upload"))
-			it.Upload, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			data, err := ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Upload = data
 		case "parentId":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentId"))
-			it.ParentID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ParentID = data
 		case "parentType":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentType"))
-			it.ParentType, err = ec.unmarshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx, v)
+			data, err := ec.unmarshalNAttachmentParent2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐAttachmentParent(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ParentType = data
 		}
 	}
 
@@ -9369,18 +9515,20 @@ func (ec *executionContext) unmarshalInputUpdateComment(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commentId"))
-			it.CommentID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.CommentID = data
 		case "content":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
-			it.Content, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Content = data
 		}
 	}
 
@@ -9405,26 +9553,29 @@ func (ec *executionContext) unmarshalInputUpdatePost(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
-			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			data, err := ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.PostID = data
 		case "title":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Title = data
 		case "content":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
-			it.Content, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Content = data
 		}
 	}
 
@@ -9449,42 +9600,47 @@ func (ec *executionContext) unmarshalInputUpdateUser(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nickname"))
-			it.Nickname, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Nickname = data
 		case "email":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Email = data
 		case "about":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("about"))
-			it.About, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.About = data
 		case "avatar":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("avatar"))
-			it.Avatar, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Avatar = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
 		}
 	}
 
@@ -9647,6 +9803,41 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = ec._Comment_attachment(ctx, field, obj)
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var loginInfoImplementors = []string{"LoginInfo"}
+
+func (ec *executionContext) _LoginInfo(ctx context.Context, sel ast.SelectionSet, obj *model.LoginInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, loginInfoImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LoginInfo")
+		case "token":
+
+			out.Values[i] = ec._LoginInfo_token(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "userId":
+
+			out.Values[i] = ec._LoginInfo_userId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10961,6 +11152,20 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNLoginInfo2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐLoginInfo(ctx context.Context, sel ast.SelectionSet, v model.LoginInfo) graphql.Marshaler {
+	return ec._LoginInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLoginInfo2ᚖbackendᚋpkgᚋgqlᚋgraphᚋmodelᚐLoginInfo(ctx context.Context, sel ast.SelectionSet, v *model.LoginInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LoginInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNLoginSession2backendᚋpkgᚋgqlᚋgraphᚋmodelᚐLoginSession(ctx context.Context, v interface{}) (model.LoginSession, error) {
