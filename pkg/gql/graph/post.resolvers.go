@@ -9,6 +9,7 @@ import (
 	"backend/pkg/gql/graph/model"
 	"backend/pkg/utils"
 	"context"
+	"sort"
 	"time"
 )
 
@@ -150,15 +151,26 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 		return nil, err
 	}
 
-	err = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
-		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId).
+	var pquery = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
-		Offset(input.Offset).Scan(ctx)
+		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId)
 
+	if *input.Followed {
+		pquery = pquery.Where("post_userid IN (SELECT follow_to_id FROM follow WHERE follow_from_id = ?)", meId)
+	}
+
+	if !*input.All {
+		// tag in input.Tags
+		// join post, post_tag, tag
+		pquery = pquery.Join("JOIN post_tag ON post_id = post_tag_postid").
+			Join("JOIN tag ON post_tag_tagid = tag_id").
+			Where("tag_name IN ?", input.Tags)
+	}
+
+	err = pquery.Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: follow & tag
 
 	// range is a copy..
 	for i := range posts {
@@ -168,6 +180,19 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 		if view, ok := r.Cache.PostView.Get(int(posts[i].ID)); ok {
 			posts[i].View = int32(*view)
 		}
+	}
+
+	// sort by like in cache, or view in cache
+	if input.OrderBy == model.PostOrderByLike {
+		// sort by like
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].Like > posts[j].Like
+		})
+	} else if input.OrderBy == model.PostOrderByView {
+		// sort by view
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].View > posts[j].View
+		})
 	}
 
 	return posts, nil

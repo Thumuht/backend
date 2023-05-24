@@ -55,14 +55,18 @@ func TestLogin(t *testing.T) {
 		login(input: {
 			loginName: "thumuht"
 			password: "harmful"
-		})
+		}){
+			token
+			userId
+		}
 	}`
 
 	s, err := SendAndGetGQL(login, nil)
+	fmt.Print(*s)
 	if err != nil {
 		t.Error(fmt.Errorf("cannot login: %w", err))
 	}
-	re := regexp.MustCompile(`"login":"(.+)"`)
+	re := regexp.MustCompile(`"login":{"token":"(.+)","u`)
 	sm := re.FindAllSubmatch([]byte(*s), -1)
 	fmt.Printf("match: %q\n", sm)
 	if sm == nil {
@@ -96,6 +100,8 @@ func TestNewPost(t *testing.T) {
 
 	if ok, err := SendAndCompareGQL(newpost, newpostResp, hdrs); ok == false {
 		t.Error(fmt.Errorf("cannot new post: %w", err))
+		// abort all tests
+		t.FailNow()
 	}
 }
 
