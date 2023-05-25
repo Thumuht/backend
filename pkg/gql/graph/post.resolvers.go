@@ -152,7 +152,7 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 	}
 
 	var pquery = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
-		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
+		Order(input.OrderBy.String()+" "+input.Order.String()).Limit(input.Limit).
 		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId)
 
 	if *input.Followed {
@@ -180,6 +180,7 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 		if view, ok := r.Cache.PostView.Get(int(posts[i].ID)); ok {
 			posts[i].View = int32(*view)
 		}
+		posts[i].CommentsNum = int32(len(posts[i].Comment))
 	}
 
 	// sort by like in cache, or view in cache
@@ -223,5 +224,6 @@ func (r *queryResolver) PostDetail(ctx context.Context, input int) (*db.Post, er
 	}
 
 	r.Cache.PostView.Set(input, int(post.View))
+	post.CommentsNum = int32(len(post.Comment))
 	return &post, nil
 }
