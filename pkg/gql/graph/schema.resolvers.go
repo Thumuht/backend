@@ -97,7 +97,7 @@ func (r *mutationResolver) DislikeComment(ctx context.Context, input int) (bool,
 func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput) ([]db.Comment, error) {
 	var comments []db.Comment
 	err := r.DB.NewSelect().Model(&comments).Relation("Post").Relation("User").Relation("Attachment").
-		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
+		Order("comment." + input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).Scan(ctx)
 	if err != nil {
 		return nil, err
