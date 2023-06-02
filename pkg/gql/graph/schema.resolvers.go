@@ -22,12 +22,37 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 	if err != nil {
 		return nil, err
 	}
+	// increase comment count by one in database update
+	// select first, then update
+	var post db.Post
+	err = r.DB.NewSelect().Model(&post).Where("post_id = ?", input.PostID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	post.CommentsNum++;
+	_, err = r.DB.NewUpdate().Model(&post).WherePK().Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return comment, nil
 }
 
 // DeleteComment is the resolver for the deleteComment field.
 func (r *mutationResolver) DeleteComment(ctx context.Context, input int) (bool, error) {
 	_, err := r.DB.NewDelete().Model((*db.Comment)(nil)).Where("comment_id = ?", input).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	// decrease comment count by one in database update
+	// select first, then update
+	var post db.Post
+	err = r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
+	if err != nil {
+		return false, err
+	}
+	post.CommentsNum--;
+	_, err = r.DB.NewUpdate().Model(&post).WherePK().Exec(ctx)
 	if err != nil {
 		return false, err
 	}
