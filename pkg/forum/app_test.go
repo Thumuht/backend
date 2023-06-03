@@ -203,10 +203,10 @@ func TestPostPaging(t *testing.T) {
 	}`
 
 	queryresp = `
-	{"data":{"posts":[{"title":"go","content":"too good"},{"title":"z","content":"0"},
-	{"title":"x","content":"1"},{"title":"c","content":"2"},{"title":"v","content":"3"},
-	{"title":"b","content":"4"},{"title":"n","content":"5"},{"title":"m","content":"6"},
-	{"title":"l","content":"7"},{"title":"k","content":"8"}]}}
+	{"data":{"posts":[{"title":"z","content":"0"},{"title":"x","content":"1"},
+	{"title":"c","content":"2"},{"title":"v","content":"3"},{"title":"b","content":"4"},
+	{"title":"n","content":"5"},{"title":"m","content":"6"},{"title":"l","content":"7"},
+	{"title":"k","content":"8"},{"title":"j","content":"9"}]}}
 	`
 
 	resp, err = SendAndCompareGQL(queryPosts, queryresp, nil)

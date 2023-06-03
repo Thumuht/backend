@@ -152,7 +152,7 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 	}
 
 	var pquery = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
-		Order("post." + input.OrderBy.String()+" "+input.Order.String()).Offset(input.Offset).Limit(input.Limit).
+		Order("post."+input.OrderBy.String()+" "+input.Order.String()).Offset(input.Offset).Limit(input.Limit).
 		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId)
 
 	if *input.Followed {

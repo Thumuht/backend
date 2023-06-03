@@ -29,7 +29,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 	if err != nil {
 		return nil, err
 	}
-	post.CommentsNum++;
+	post.CommentsNum++
 	_, err = r.DB.NewUpdate().Model(&post).WherePK().Exec(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *mutationResolver) DeleteComment(ctx context.Context, input int) (bool, 
 	if err != nil {
 		return false, err
 	}
-	post.CommentsNum--;
+	post.CommentsNum--
 	_, err = r.DB.NewUpdate().Model(&post).WherePK().Exec(ctx)
 	if err != nil {
 		return false, err

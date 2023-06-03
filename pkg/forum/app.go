@@ -85,6 +85,20 @@ func SetRouter(app *App) {
 	app.GET("/", router.PlaygroundH())
 
 	app.StaticFS("/fs", gin.Dir(viper.GetString("fs_route"), true))
+	app.POST("/upload", func(ctx *gin.Context) {
+		ctx.String(200, "upload")
+		file, err := ctx.FormFile("file")
+		if err != nil {
+			ctx.String(200, "no file")
+			return
+		}
+		ctx.String(200, file.Filename)
+		err = ctx.SaveUploadedFile(file, viper.GetString("fs_route")+"/"+file.Filename)
+		if err != nil {
+			ctx.String(200, "save error")
+			return
+		}
+	})
 }
 
 // Run Forum. BLOCK!!
