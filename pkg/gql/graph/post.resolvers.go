@@ -16,10 +16,24 @@ import (
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) (*db.Post, error) {
 	post := &db.Post{
-		UserID:  int32(input.UserID),
-		Content: *input.Content,
-		Title:   *input.Title,
+		UserID: int32(input.UserID),
 	}
+	if input.Content != nil {
+		post.Content = *input.Content
+	}
+
+	if input.Title != nil {
+		post.Title = *input.Title
+	}
+
+	if input.Tag != nil {
+		post.Tag = int32(*input.Tag)
+	}
+
+	if input.Position != nil {
+		post.Position = *input.Position
+	}
+
 	_, err := r.DB.NewInsert().Model(post).Returning("*").Exec(ctx)
 	if err != nil {
 		return nil, err

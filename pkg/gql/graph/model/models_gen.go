@@ -60,9 +60,11 @@ type NewMarkPost struct {
 }
 
 type NewPost struct {
-	UserID  int     `json:"userId"`
-	Title   *string `json:"title,omitempty"`
-	Content *string `json:"content,omitempty"`
+	UserID   int     `json:"userId"`
+	Title    *string `json:"title,omitempty"`
+	Content  *string `json:"content,omitempty"`
+	Tag      *int    `json:"tag,omitempty"`
+	Position *string `json:"position,omitempty"`
 }
 
 type NewUser struct {
