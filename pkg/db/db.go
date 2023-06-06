@@ -46,8 +46,6 @@ func InitPGDB() (*bun.DB, error) {
 func InitModels(db *bun.DB) error {
 	ctx := context.Background()
 
-	db.RegisterModel((*PostTag)(nil))
-
 	_, err := db.NewCreateTable().Model((*User)(nil)).Exec(ctx)
 	if err != nil {
 		return err
@@ -93,18 +91,6 @@ func InitModels(db *bun.DB) error {
 
 	// new block model
 	_, err = db.NewCreateTable().Model((*Block)(nil)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	// new tag model
-	_, err = db.NewCreateTable().Model((*Tag)(nil)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	// new post_tag model
-	_, err = db.NewCreateTable().Model((*PostTag)(nil)).Exec(ctx)
 	if err != nil {
 		return err
 	}

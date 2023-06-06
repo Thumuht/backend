@@ -35,13 +35,13 @@ type Post struct {
 	Like        int32     `json:"like" bun:"like"`
 	CommentsNum int32     `json:"commentsNum" bun:"comments_num"`
 	UserID      int32     `json:"userId" bun:"post_userid"`
+	Tag         int32     `json:"tag" bun:"tag"`
 	CreatedAt   time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt   time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 
 	User       *User         `json:"user" bun:"rel:belongs-to,join:post_userid=user_id,on_delete:cascade"`
 	Comment    []*Comment    `json:"comment" bun:"rel:has-many,join:post_id=comment_postid"`
 	Attachment []*Attachment `json:"attachment" bun:"rel:has-many,join:post_id=attachment_parentid,join:type=parent_type,polymorphic"`
-	Tag        []*Tag        `json:"tag" bun:"m2m:post_tag,join:Tag=Post"`
 }
 
 type Comment struct {
@@ -127,23 +127,4 @@ type Block struct {
 	BlockTo   *User `json:"blockTo" bun:"rel:belongs-to,join:block_to_id=user_id,on_delete:cascade"`
 
 	CreatedAt int32 `bun:",nullzero,notnull,default:current_timestamp"`
-}
-
-type Tag struct {
-	bun.BaseModel `bun:"table:tag"`
-
-	TagId   int32  `json:"tagId" bun:"tag_id,pk"`
-	TagName string `json:"tagName" bun:"tag_name"`
-
-	Post []*Post `json:"post" bun:"m2m:post_tag,join:Tag=Post"`
-}
-
-type PostTag struct {
-	bun.BaseModel `bun:"table:post_tag"`
-
-	PostID int32 `bun:"post_tag_postid,pk"`
-	TagID  int32 `bun:"post_tag_tagid,pk"`
-
-	Post *Post `json:"post" bun:"rel:belongs-to,join:post_tag_postid=post_id,on_delete:cascade"`
-	Tag  *Tag  `json:"tag" bun:"rel:belongs-to,join:post_tag_tagid=tag_id,on_delete:cascade"`
 }

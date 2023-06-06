@@ -10,19 +10,13 @@ type Post @goModel(
   position: String
   createdAt: Time
   updatedAt: Time
+  tag: Int
 
   user: User
   comment: [Comment]
   attachment: [Attachment]
-  tag: [Tag]
 }
 
-type Tag @goModel(
-  model: "backend/pkg/db.Tag"
-){
-  tagId: Int!
-  tagName: String
-}
 
 type BookmarkList @goModel(
   model: "backend/pkg/db.BookmarkList"
@@ -40,7 +34,7 @@ input NewPost {
   userId: Int!
   title: String
   content: String
-  tag: [String]
+  tag: Int
 }
 
 input UpdatePost {
@@ -72,9 +66,7 @@ input GetPostInput {
   orderBy: PostOrderBy! = post_id
   order: Order! = ASC
   followed: Boolean = false
-  """all = true 意味着不用 tags"""
-  all: Boolean = true
-  tags: [String]
+  tags: Int
 }
 
 extend type Query {

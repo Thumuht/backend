@@ -23,9 +23,7 @@ type GetPostInput struct {
 	OrderBy  PostOrderBy `json:"orderBy"`
 	Order    Order       `json:"order"`
 	Followed *bool       `json:"followed,omitempty"`
-	// all = true 意味着不用 tags
-	All  *bool     `json:"all,omitempty"`
-	Tags []*string `json:"tags,omitempty"`
+	Tags     *int        `json:"tags,omitempty"`
 }
 
 type GetUserInput struct {
@@ -62,10 +60,9 @@ type NewMarkPost struct {
 }
 
 type NewPost struct {
-	UserID  int       `json:"userId"`
-	Title   *string   `json:"title,omitempty"`
-	Content *string   `json:"content,omitempty"`
-	Tag     []*string `json:"tag,omitempty"`
+	UserID  int     `json:"userId"`
+	Title   *string `json:"title,omitempty"`
+	Content *string `json:"content,omitempty"`
 }
 
 type NewUser struct {

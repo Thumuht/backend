@@ -159,12 +159,8 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 		pquery = pquery.Where("post_userid IN (SELECT follow_to_id FROM follow WHERE follow_from_id = ?)", meId)
 	}
 
-	if !*input.All {
-		// tag in input.Tags
-		// join post, post_tag, tag
-		pquery = pquery.Join("JOIN post_tag ON post_id = post_tag_postid").
-			Join("JOIN tag ON post_tag_tagid = tag_id").
-			Where("tag_name IN ?", input.Tags)
+	if input.Tags != nil {
+		pquery = pquery.Where("tag = ?", input.Tags)
 	}
 
 	err = pquery.Scan(ctx)
