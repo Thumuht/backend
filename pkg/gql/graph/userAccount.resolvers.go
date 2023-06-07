@@ -77,6 +77,18 @@ func (r *mutationResolver) UnfollowUser(ctx context.Context, input int) (bool, e
 	return true, nil
 }
 
+// GetUserFavoritePost is the resolver for the getUserFavoritePost field.
+func (r *mutationResolver) GetUserFavoritePost(ctx context.Context, input int) ([]*db.Post, error) {
+	var user db.User
+	_, err := r.DB.NewSelect().Model(&user).
+		Relation("BookmarkList").
+		Where("user_id = ?", input).Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return user.BookmarkList, nil
+}
+
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, input int) (bool, error) {
 	_, err := r.DB.NewDelete().Model((*db.User)(nil)).Where("user_id = ?", input).Exec(ctx)

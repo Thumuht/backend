@@ -17,11 +17,11 @@ type User struct {
 	About     string `json:"about" bun:"about"`
 	Avatar    string `json:"avatar" bun:"avatar"`
 
-	Post         []*Post         `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
-	Comment      []*Comment      `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
-	Follow       []*Follow       `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
-	Follower     []*Follow       `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
-	BookmarkList []*BookmarkList `json:"userBookmarkList" bun:"rel:has-many,join:user_id=bookmark_list_userid"`
+	Post         []*Post    `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
+	Comment      []*Comment `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
+	Follow       []*Follow  `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
+	Follower     []*Follow  `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
+	BookmarkList []*Post    `json:"userBookmarkList" bun:"m2m:bookmark,join:User=Post"`
 }
 
 type Post struct {
@@ -70,7 +70,6 @@ type Attachment struct {
 	CreatedAt  time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-// TODO(wj): follow, Message
 type Follow struct {
 	bun.BaseModel `bun:"table:follow"`
 
@@ -97,24 +96,10 @@ type Message struct {
 type Bookmark struct {
 	bun.BaseModel `bun:"table:bookmark"`
 
-	PostID         int32         `bun:"bookmark_postid,pk"`
-	Post           *Post         `json:"post" bun:"rel:belongs-to,join:bookmark_postid=post_id"`
-	BookmarkListID int32         `bun:"bookmark_bookmarklistid,pk"`
-	BookmarkList   *BookmarkList `json:"bookmarkList" bun:"rel:belongs-to,join:bookmark_bookmarklistid=bookmark_list_id"`
-}
-
-type BookmarkList struct {
-	bun.BaseModel `bun:"table:bookmark_list"`
-
-	ID        int32     `json:"id" bun:"bookmark_list_id,pk"`
-	List      string    `json:"list" bun:"bookmark_list"`
-	UserID    int32     `bun:"bookmark_list_userid"`
-	CreatedAt time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
-	UpdatedAt time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
-
-	User *User `json:"user" bun:"rel:belongs-to,join:bookmark_list_userid=user_id,on_delete:cascade"`
-	// many-to-many through Bookmark
-	Post []*Post `json:"post" bun:"m2m:bookmark,join:Post=BookmarkList"`
+	BookmarkPostID int32 `bun:",pk"`
+	BookmarkUserID int32 `bun:",pk"`
+	Post   *Post `bun:"rel:belongs-to,join:bookmark_post_id=post_id,on_delete:cascade"`
+	User   *User `bun:"rel:belongs-to,join:bookmark_user_id=user_id,on_delete:cascade"`
 }
 
 type Block struct {

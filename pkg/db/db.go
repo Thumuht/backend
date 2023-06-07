@@ -46,6 +46,8 @@ func InitPGDB() (*bun.DB, error) {
 func InitModels(db *bun.DB) error {
 	ctx := context.Background()
 
+	db.RegisterModel((*Bookmark)(nil))
+
 	_, err := db.NewCreateTable().Model((*User)(nil)).Exec(ctx)
 	if err != nil {
 		return err
@@ -79,12 +81,6 @@ func InitModels(db *bun.DB) error {
 
 	// new bookmark model
 	_, err = db.NewCreateTable().Model((*Bookmark)(nil)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	// new bookmark_list model
-	_, err = db.NewCreateTable().Model((*BookmarkList)(nil)).Exec(ctx)
 	if err != nil {
 		return err
 	}

@@ -72,31 +72,12 @@ func (r *mutationResolver) DeletePost(ctx context.Context, postID int) (bool, er
 	return true, nil
 }
 
-// NewBookmarkList is the resolver for the newBookmarkList field.
-func (r *mutationResolver) NewBookmarkList(ctx context.Context, input string) (*db.BookmarkList, error) {
-	gctx, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	cTime := time.Now()
-	bookmarkList := &db.BookmarkList{
-		List:      input,
-		UserID:    int32(gctx.GetInt("userId")),
-		CreatedAt: cTime,
-		UpdatedAt: cTime,
-	}
-	_, err = r.DB.NewInsert().Model(bookmarkList).Returning("*").Exec(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return bookmarkList, nil
-}
-
 // MarkPost is the resolver for the markPost field.
-func (r *mutationResolver) MarkPost(ctx context.Context, input model.NewMarkPost) (bool, error) {
+func (r *mutationResolver) MarkPost(ctx context.Context, input int) (bool, error) {
+	userId, _ := utils.GetMe(ctx)
 	markPost := &db.Bookmark{
-		PostID:         int32(input.PostID),
-		BookmarkListID: int32(input.BookmarkListID),
+		BookmarkPostID: int32(input),
+		BookmarkUserID: int32(userId),
 	}
 	_, err := r.DB.NewInsert().Model(markPost).Returning("*").Exec(ctx)
 	if err != nil {
@@ -106,8 +87,9 @@ func (r *mutationResolver) MarkPost(ctx context.Context, input model.NewMarkPost
 }
 
 // UnmarkPost is the resolver for the unmarkPost field.
-func (r *mutationResolver) UnmarkPost(ctx context.Context, input model.NewMarkPost) (bool, error) {
-	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("post_id = ? AND bookmark_list_id = ?", input.PostID, input.BookmarkListID).Exec(ctx)
+func (r *mutationResolver) UnmarkPost(ctx context.Context, input int) (bool, error) {
+	userId, _ := utils.GetMe(ctx)
+	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("post_id = ? AND user_id = ?", input, userId).Exec(ctx)
 	if err != nil {
 		return false, err
 	}

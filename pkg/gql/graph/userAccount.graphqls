@@ -17,7 +17,7 @@ type User @goModel(
   follow: [User]
   follower: [User]
   block: [User]
-  bookmarkList: [BookmarkList]
+  bookmarkList: [Post]
 }
 
 type Message @goModel(
@@ -91,6 +91,8 @@ extend type Mutation {
   """ 对用户进行关注和取消关注 """
   followUser(input: Int!): Boolean!                      @login
   unfollowUser(input: Int!): Boolean!                    @login
+
+  getUserFavoritePost(input: Int!): [Post]             @login
 
   """ 删除用户 """
   deleteUser(input: Int!): Boolean!                      @login

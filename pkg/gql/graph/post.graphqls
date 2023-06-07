@@ -18,18 +18,6 @@ type Post @goModel(
 }
 
 
-type BookmarkList @goModel(
-  model: "backend/pkg/db.BookmarkList"
-){
-  id: Int!
-  list: String
-  createdAt: Time
-  updatedAt: Time
-
-  user: User
-  post: [Post]
-}
-
 input NewPost {
   userId: Int!
   title: String
@@ -44,10 +32,6 @@ input UpdatePost {
   content: String
 }
 
-input NewMarkPost {
-  postId: Int!
-  bookmarkListId: Int!
-}
 
 enum PostOrderBy {
   post_id
@@ -80,10 +64,9 @@ extend type Mutation {
   createPost(input: NewPost!): Post!                     @login
   updatePost(input: UpdatePost!): Post!                  @login
   deletePost(postId: Int!): Boolean!                     @login
-  newBookmarkList(input: String!): BookmarkList!         @login
 
-  markPost(input: NewMarkPost!): Boolean!                @login
-  unmarkPost(input: NewMarkPost!): Boolean!              @login
+  markPost(input: Int!): Boolean!                @login
+  unmarkPost(input: Int!): Boolean!              @login
 
   likePost(input: Int!): Boolean!                        @login
   dislikePost(input: Int!): Boolean!                     @login

@@ -54,11 +54,6 @@ type NewComment struct {
 	Content *string `json:"content,omitempty"`
 }
 
-type NewMarkPost struct {
-	PostID         int `json:"postId"`
-	BookmarkListID int `json:"bookmarkListId"`
-}
-
 type NewPost struct {
 	UserID   int     `json:"userId"`
 	Title    *string `json:"title,omitempty"`
