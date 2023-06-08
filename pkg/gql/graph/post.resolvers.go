@@ -89,7 +89,7 @@ func (r *mutationResolver) MarkPost(ctx context.Context, input int) (bool, error
 // UnmarkPost is the resolver for the unmarkPost field.
 func (r *mutationResolver) UnmarkPost(ctx context.Context, input int) (bool, error) {
 	userId, _ := utils.GetMe(ctx)
-	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("post_id = ? AND user_id = ?", input, userId).Exec(ctx)
+	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("bookmark_post_id = ? AND bookmark_user_id = ?", input, userId).Exec(ctx)
 	if err != nil {
 		return false, err
 	}
