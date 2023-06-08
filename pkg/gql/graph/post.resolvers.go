@@ -89,8 +89,11 @@ func (r *mutationResolver) MarkPost(ctx context.Context, input int) (bool, error
 
 // UnmarkPost is the resolver for the unmarkPost field.
 func (r *mutationResolver) UnmarkPost(ctx context.Context, input int) (bool, error) {
-	userId, _ := utils.GetMe(ctx)
-	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("bookmark_post_id = ? AND bookmark_user_id = ?", input, userId).Exec(ctx)
+	userTok, _ := utils.GetMe(ctx)
+
+	userId, _ := r.Cache.Sessions.Get(userTok)
+
+	_, err := r.DB.NewDelete().Model((*db.Bookmark)(nil)).Where("bookmark_post_id = ? AND bookmark_user_id = ?", input, *userId).Exec(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -143,17 +146,22 @@ func (r *mutationResolver) DislikePost(ctx context.Context, input int) (bool, er
 func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]*db.Post, error) {
 	var posts []*db.Post
 	// get me if login
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	var pquery = r.DB.NewSelect().Model(&posts).Relation("User").Relation("Comment").Relation("Attachment").
-		Order("post."+input.OrderBy.String()+" "+input.Order.String()).Offset(input.Offset).Limit(input.Limit).
-		Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", meId)
+		Order("post."+input.OrderBy.String()+" "+input.Order.String()).Offset(input.Offset).Limit(input.Limit)
+
+	if meId != nil {
+		pquery = pquery.Where("post_userid NOT IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", *meId)
+	}
 
 	if *input.Followed {
-		pquery = pquery.Where("post_userid IN (SELECT follow_to_id FROM follow WHERE follow_from_id = ?)", meId)
+		pquery = pquery.Where("post_userid IN (SELECT follow_to_id FROM follow WHERE follow_from_id = ?)", *meId)
 	}
 
 	if input.Tags != nil {

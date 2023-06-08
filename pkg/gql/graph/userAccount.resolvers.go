@@ -60,13 +60,15 @@ func (r *mutationResolver) FollowUser(ctx context.Context, input int) (bool, err
 
 // UnfollowUser is the resolver for the unfollowUser field.
 func (r *mutationResolver) UnfollowUser(ctx context.Context, input int) (bool, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	_, err = r.DB.NewDelete().Model((*db.Follow)(nil)).
-		Where("follow_from_id = ?", meId).
+		Where("follow_from_id = ?", *meId).
 		Where("follow_to_id = ?", input).
 		Exec(ctx)
 
@@ -132,13 +134,15 @@ func (r *mutationResolver) BlockUser(ctx context.Context, input int) (bool, erro
 
 // UnblockUser is the resolver for the unblockUser field.
 func (r *mutationResolver) UnblockUser(ctx context.Context, input int) (bool, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	_, err = r.DB.NewDelete().Model((*db.Block)(nil)).
-		Where("block_from_id = ?", meId).
+		Where("block_from_id = ?", *meId).
 		Where("block_to_id = ?", input).
 		Exec(ctx)
 
@@ -270,13 +274,15 @@ func (r *queryResolver) GetUserFavoritePost(ctx context.Context, input int) ([]*
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*db.User, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	var user db.User
-	err = r.DB.NewSelect().Model(&user).Where("user_id = ?", meId).Scan(ctx)
+	err = r.DB.NewSelect().Model(&user).Where("user_id = ?", *meId).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -307,14 +313,16 @@ func (r *queryResolver) MyMessage(ctx context.Context, from *int, offset *int, l
 // MyMessageUser is the resolver for the myMessageUser field.
 func (r *queryResolver) MyMessageUser(ctx context.Context) ([]db.User, error) {
 	// select distinct users from message
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	var users []db.User
 	err = r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
-		Where("user_id IN (SELECT DISTINCT user_from FROM message WHERE user_to = ? OR user_from = ?)", meId, meId).
+		Where("user_id IN (SELECT DISTINCT user_from FROM message WHERE user_to = ? OR user_from = ?)", *meId, *meId).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
