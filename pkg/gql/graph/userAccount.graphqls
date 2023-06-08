@@ -75,6 +75,7 @@ extend type Query {
   users(input: GetUserInput!): [User!]!
   """ 查询用户 """
   getUserById(input: Int!): User!
+  getUserFavoritePost(input: Int!): [Post]             @login
 
   """ 获取本人信息 """
   me: User!                                             @login
@@ -91,8 +92,6 @@ extend type Mutation {
   """ 对用户进行关注和取消关注 """
   followUser(input: Int!): Boolean!                      @login
   unfollowUser(input: Int!): Boolean!                    @login
-
-  getUserFavoritePost(input: Int!): [Post]             @login
 
   """ 删除用户 """
   deleteUser(input: Int!): Boolean!                      @login

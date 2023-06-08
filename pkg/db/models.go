@@ -98,8 +98,8 @@ type Bookmark struct {
 
 	BookmarkPostID int32 `bun:",pk"`
 	BookmarkUserID int32 `bun:",pk"`
-	Post   *Post `bun:"rel:belongs-to,join:bookmark_post_id=post_id,on_delete:cascade"`
-	User   *User `bun:"rel:belongs-to,join:bookmark_user_id=user_id,on_delete:cascade"`
+	Post           *Post `bun:"rel:belongs-to,join:bookmark_post_id=post_id,on_delete:cascade"`
+	User           *User `bun:"rel:belongs-to,join:bookmark_user_id=user_id,on_delete:cascade"`
 }
 
 type Block struct {
