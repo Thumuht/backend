@@ -48,16 +48,18 @@ func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *model.M
 
 // MessageToMe is the resolver for the messageToMe field.
 func (r *subscriptionResolver) MessageToMe(ctx context.Context) (<-chan *db.Message, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, ok := r.Cache.Notifier.Get(meId); !ok {
-		r.Cache.Notifier.Set(meId, make(chan *db.Message))
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
+	if _, ok := r.Cache.Notifier.Get(*meId); !ok {
+		r.Cache.Notifier.Set(*meId, make(chan *db.Message))
 	}
 
-	ch, _ := r.Cache.Notifier.Get(meId)
+	ch, _ := r.Cache.Notifier.Get(*meId)
 	return *ch, nil
 }
 

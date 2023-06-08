@@ -111,13 +111,15 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUse
 
 // BlockUser is the resolver for the blockUser field.
 func (r *mutationResolver) BlockUser(ctx context.Context, input int) (bool, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	_, err = r.DB.NewInsert().Model(&db.Block{
-		BlockFromId: int32(meId),
+		BlockFromId: int32(*meId),
 		BlockToId:   int32(input),
 	}).Exec(ctx)
 
@@ -149,13 +151,15 @@ func (r *mutationResolver) UnblockUser(ctx context.Context, input int) (bool, er
 
 // SendMessage is the resolver for the sendMessage field.
 func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageInput) (bool, error) {
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	msg := &db.Message{
-		UserFrom: int32(meId),
+		UserFrom: int32(*meId),
 		UserTo:   int32(input.ToID),
 		Content:  input.Content,
 		IsNew:    true,

@@ -74,10 +74,11 @@ func (r *mutationResolver) DeletePost(ctx context.Context, postID int) (bool, er
 
 // MarkPost is the resolver for the markPost field.
 func (r *mutationResolver) MarkPost(ctx context.Context, input int) (bool, error) {
-	userId, _ := utils.GetMe(ctx)
+	userTok, _ := utils.GetMe(ctx)
+	userId, _ := r.Cache.Sessions.Get(userTok)
 	markPost := &db.Bookmark{
 		BookmarkPostID: int32(input),
-		BookmarkUserID: int32(userId),
+		BookmarkUserID: int32(*userId),
 	}
 	_, err := r.DB.NewInsert().Model(markPost).Returning("*").Exec(ctx)
 	if err != nil {

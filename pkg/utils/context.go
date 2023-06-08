@@ -44,10 +44,12 @@ func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 }
 
 // get me
-func GetMe(ctx context.Context) (int, error) {
+func GetMe(ctx context.Context) (string, error) {
 	gctx, err := GinContextFromContext(ctx)
 	if err != nil {
-		return 0, err
+		return "error", err
 	}
-	return gctx.GetInt("userId"), nil
+	// get token from header
+	token := gctx.GetHeader("Token")
+	return token, nil
 }
