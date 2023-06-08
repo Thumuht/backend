@@ -259,14 +259,9 @@ func (r *queryResolver) GetUserByID(ctx context.Context, input int) (*db.User, e
 
 // GetUserFavoritePost is the resolver for the getUserFavoritePost field.
 func (r *queryResolver) GetUserFavoritePost(ctx context.Context, input int) ([]*db.Post, error) {
-	var user db.User
-	_, err := r.DB.NewSelect().Model(&user).
-		Relation("BookmarkList").
-		Where("user_id = ?", input).Exec(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return user.BookmarkList, nil
+	var favPosts []*db.Post
+	_ = r.DB.NewSelect().Model(&favPosts).Where("post_id IN (SELECT bookmark_post_id FROM bookmark WHERE bookmark_user_id = ?)", input, input).Scan(ctx)
+	return favPosts, nil
 }
 
 // Me is the resolver for the me field.
