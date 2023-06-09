@@ -5,5 +5,5 @@ type myTime {
 
 type Subscription {
     currentTime: myTime!
-    messageToMe: Message!
+    messageToMe(token: String!): Message!
 }

@@ -140,7 +140,7 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		CurrentTime func(childComplexity int) int
-		MessageToMe func(childComplexity int) int
+		MessageToMe func(childComplexity int, token string) int
 	}
 
 	User struct {
@@ -210,7 +210,7 @@ type QueryResolver interface {
 }
 type SubscriptionResolver interface {
 	CurrentTime(ctx context.Context) (<-chan *model.MyTime, error)
-	MessageToMe(ctx context.Context) (<-chan *db.Message, error)
+	MessageToMe(ctx context.Context, token string) (<-chan *db.Message, error)
 }
 type UserResolver interface {
 	Follow(ctx context.Context, obj *db.User) ([]*db.User, error)
@@ -843,7 +843,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Subscription.MessageToMe(childComplexity), true
+		args, err := ec.field_Subscription_messageToMe_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.MessageToMe(childComplexity, args["token"].(string)), true
 
 	case "User.about":
 		if e.complexity.User.About == nil {
@@ -1551,6 +1556,21 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_messageToMe_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
 	return args, nil
 }
 
@@ -5899,7 +5919,7 @@ func (ec *executionContext) _Subscription_messageToMe(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().MessageToMe(rctx)
+		return ec.resolvers.Subscription().MessageToMe(rctx, fc.Args["token"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5951,6 +5971,17 @@ func (ec *executionContext) fieldContext_Subscription_messageToMe(ctx context.Co
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_messageToMe_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }

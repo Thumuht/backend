@@ -7,7 +7,6 @@ package graph
 import (
 	"backend/pkg/db"
 	"backend/pkg/gql/graph/model"
-	"backend/pkg/utils"
 	"context"
 	"fmt"
 	"time"
@@ -47,16 +46,13 @@ func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *model.M
 }
 
 // MessageToMe is the resolver for the messageToMe field.
-func (r *subscriptionResolver) MessageToMe(ctx context.Context) (<-chan *db.Message, error) {
-	meTok, err := utils.GetMe(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	meId, _ := r.Cache.Sessions.Get(meTok)
+func (r *subscriptionResolver) MessageToMe(ctx context.Context, token string) (<-chan *db.Message, error) {
+	meId, _ := r.Cache.Sessions.Get(token)
+	fmt.Printf("meId: %v\n", *meId)
 
 	if _, ok := r.Cache.Notifier.Get(*meId); !ok {
-		r.Cache.Notifier.Set(*meId, make(chan *db.Message))
+		// err
+		return nil, fmt.Errorf("no such user")
 	}
 
 	ch, _ := r.Cache.Notifier.Get(*meId)

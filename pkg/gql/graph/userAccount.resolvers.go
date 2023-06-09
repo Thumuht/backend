@@ -201,26 +201,31 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginSession) 
 	r.Cache.Sessions.Set(token, int(user.ID))
 
 	// query all new message from db, and send to user
-	go func() {
-		var msgs []db.Message
-		err := r.DB.NewSelect().Model(&msgs).Where("user_to = ?", user.ID).Where("is_new = ?", true).Scan(ctx)
-		if err != nil {
-			return
-		}
+	var msgs []db.Message
+	err = r.DB.NewSelect().Model(&msgs).Where("user_to = ?", user.ID).Where("is_new = ?", true).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-		if ch, ok := r.Cache.Notifier.Get(int(user.ID)); ok {
-			for _, msg := range msgs {
-				*ch <- &msg
-			}
+	if ch, ok := r.Cache.Notifier.Get(int(user.ID)); ok {
+		for _, msg := range msgs {
+			*ch <- &msg
 		}
+	} else {
+		// if user didn't login, new a channel and put all new message in it
+		ch := make(chan *db.Message, 10)
+		r.Cache.Notifier.Set(int(user.ID), ch)
+		for _, msg := range msgs {
+			ch <- &msg
+		}
+	}
 
-		// update them as not new
-		_, err = r.DB.NewUpdate().Model((*db.Message)(nil)).Set("is_new = ?", false).
-			Where("user_to = ?", user.ID).Where("is_new = ?", true).Exec(ctx)
-		if err != nil {
-			return
-		}
-	}()
+	// update them as not new
+	_, err = r.DB.NewUpdate().Model((*db.Message)(nil)).Set("is_new = ?", false).
+		Where("user_to = ?", user.ID).Where("is_new = ?", true).Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &model.LoginInfo{
 		Token:  token,
@@ -292,16 +297,18 @@ func (r *queryResolver) Me(ctx context.Context) (*db.User, error) {
 // MyMessage is the resolver for the myMessage field.
 func (r *queryResolver) MyMessage(ctx context.Context, from *int, offset *int, limit *int) ([]db.Message, error) {
 	// if from = nil, get all message
-	meId, err := utils.GetMe(ctx)
+	meTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
 	var msgs []db.Message
-	q := r.DB.NewSelect().Model(&msgs).Where("user_to = ? OR user_froom = ?", meId, meId).
+	q := r.DB.NewSelect().Model(&msgs).Where("user_to = ? OR user_from = ?", *meId, *meId).
 		Order("created_at DESC")
 	if from != nil {
-		q = q.Where("user_from = ?", from)
+		q = q.Where("user_from = ?", *from)
 	}
 	err = q.Offset(*offset).Limit(*limit).Scan(ctx)
 	if err != nil {
