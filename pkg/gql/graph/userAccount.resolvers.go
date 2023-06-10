@@ -261,7 +261,7 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]db.User, error) {
 	var users []db.User
-	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").Relation("Follow").Relation("Block").Relation("Follower").
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).
 		Scan(ctx)
