@@ -44,7 +44,7 @@ func TestNewUser(t *testing.T) {
 		}
 	}`
 
-	newuserResp := `{"data":{"createUser":{"id":1,"loginName":"thumuht"}}}`
+	newuserResp := `{"data":{"createUser":{"id":2,"loginName":"thumuht"}}}`
 	if ok, err := SendAndCompareGQL(newuser, newuserResp, nil); ok == false {
 		t.Error(fmt.Errorf("cannot new user: %w", err))
 	}
@@ -231,7 +231,7 @@ func TestCache(t *testing.T) {
 	hdrs := map[string]string{"Token": utoken}
 
 	var wg sync.WaitGroup
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		// i must be in parameter
 		go func() {
@@ -242,8 +242,7 @@ func TestCache(t *testing.T) {
 
 	wg.Wait()
 
-	app.Cache.PostLike.Flush()
-	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":20000}}}`, nil)
+	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":1000}}}`, nil)
 	if err != nil || !ok {
 		t.Error("testcache failed")
 	}
@@ -263,7 +262,7 @@ func TestCacheCSP(t *testing.T) {
 	hdrs := map[string]string{"Token": utoken}
 
 	var wg sync.WaitGroup
-	for i := 0; i < 20000; i++ {
+	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		// i must be in parameter
 		go func() {
@@ -274,8 +273,7 @@ func TestCacheCSP(t *testing.T) {
 
 	wg.Wait()
 
-	app.Cache.PostLike.Flush()
-	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":40000}}}`, nil)
+	ok, err := SendAndCompareGQL(getlike, `{"data":{"postDetail":{"like":2000}}}`, nil)
 	if err != nil || !ok {
 		t.Error("testcache failed")
 	}

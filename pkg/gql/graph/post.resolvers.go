@@ -9,6 +9,7 @@ import (
 	"backend/pkg/gql/graph/model"
 	"backend/pkg/utils"
 	"context"
+	"fmt"
 	"sort"
 	"time"
 )
@@ -38,6 +39,21 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	if err != nil {
 		return nil, err
 	}
+
+	// inform all followers of the new post
+	var followers []db.Follow
+	err = r.DB.NewSelect().Model(&followers).Where("follow_to_id = ?", input.UserID).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := fmt.Sprintf("你关注的用户发布了新的帖子: %s", *input.Title)
+	for _, follower := range followers {
+		if r.sendMsgTo(ctx, msg, utils.SysAccountID, int(follower.FollowFromId)) != nil {
+			return nil, err
+		}
+	}
+
 	return post, nil
 }
 
@@ -102,22 +118,12 @@ func (r *mutationResolver) UnmarkPost(ctx context.Context, input int) (bool, err
 
 // LikePost is the resolver for the likePost field.
 func (r *mutationResolver) LikePost(ctx context.Context, input int) (bool, error) {
-	// first see cache
-	// if not exists, fetch from db and write to cache
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
-
-	if like, ok := r.Cache.PostLike.Get(input); ok {
-		r.Cache.PostLike.Set(input, *like+1)
-	} else {
-		var post db.Post
-		err := r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
-		if err != nil {
-			return false, err
-		}
-		r.Cache.PostLike.Set(input, int(post.Like)+1)
-	}
-
+	var post db.Post
+	r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
+	r.DB.NewUpdate().Model(&post).Set("like = ?", post.Like+1).WherePK().Exec(ctx)
+	r.sendMsgTo(ctx, "one user liked your post!", utils.SysAccountID, int(post.UserID))
 	return true, nil
 }
 
@@ -128,17 +134,9 @@ func (r *mutationResolver) DislikePost(ctx context.Context, input int) (bool, er
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 
-	if like, ok := r.Cache.PostLike.Get(input); ok {
-		r.Cache.PostLike.Set(input, *like-1)
-	} else {
-		var post db.Post
-		err := r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
-		if err != nil {
-			return false, err
-		}
-		r.Cache.PostLike.Set(input, int(post.Like)-1)
-	}
-
+	var post db.Post
+	r.DB.NewSelect().Model(&post).Where("post_id = ?", input).Scan(ctx)
+	r.DB.NewUpdate().Model(&post).Set("like = ?", post.Like-1).WherePK().Exec(ctx)
 	return true, nil
 }
 
@@ -174,14 +172,6 @@ func (r *queryResolver) Posts(ctx context.Context, input model.GetPostInput) ([]
 	}
 
 	// range is a copy..
-	for i := range posts {
-		if like, ok := r.Cache.PostLike.Get(int(posts[i].ID)); ok {
-			posts[i].Like = int32(*like)
-		}
-		if view, ok := r.Cache.PostView.Get(int(posts[i].ID)); ok {
-			posts[i].View = int32(*view)
-		}
-	}
 
 	// sort by like in cache, or view in cache
 	if input.OrderBy == model.PostOrderByLike {
@@ -211,19 +201,9 @@ func (r *queryResolver) PostDetail(ctx context.Context, input int) (*db.Post, er
 		return nil, err
 	}
 
-	// first see cache
-	// if not exists, fetch from db and write to cache
-	if view, ok := r.Cache.PostView.Get(input); ok {
-		post.View = int32(*view) + 1
-	} else {
-		post.View += 1
-	}
+	// fetch from db, +1, update
+	r.DB.NewUpdate().Model(&post).Set("view = ?", post.View+1).WherePK().Exec(ctx)
 
-	if like, ok := r.Cache.PostLike.Get(input); ok {
-		post.Like = int32(*like)
-	}
-
-	r.Cache.PostView.Set(input, int(post.View))
 	post.CommentsNum = int32(len(post.Comment))
 	return &post, nil
 }

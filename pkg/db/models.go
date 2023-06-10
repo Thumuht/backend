@@ -19,8 +19,8 @@ type User struct {
 
 	Post         []*Post    `json:"post" bun:"rel:has-many,join:user_id=post_userid"`
 	Comment      []*Comment `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
-	Follow       []*Follow  `json:"follow" bun:"rel:has-many,join:user_id=follow_from"`
-	Follower     []*Follow  `json:"follower" bun:"rel:has-many,join:user_id=follow_to"`
+	Follow       []*Follow  `json:"follow" bun:"rel:has-many,join:user_id=follow_from_id"`
+	Follower     []*Follow  `json:"follower" bun:"rel:has-many,join:user_id=follow_to_id"`
 	BookmarkList []*Post    `json:"userBookmarkList" bun:"m2m:bookmark,join:User=Post"`
 }
 
@@ -73,11 +73,11 @@ type Attachment struct {
 type Follow struct {
 	bun.BaseModel `bun:"table:follow"`
 
-	FollowFromId int32 `bun:"follow_from,pk"`
-	FollowToId   int32 `bun:"follow_to,pk"`
+	FollowFromId int32 `bun:",pk"`
+	FollowToId   int32 `bun:",pk"`
 
-	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from=user_id,on_delete:cascade"`
-	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to=user_id,on_delete:cascade"`
+	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from_id=user_id,on_delete:cascade"`
+	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to_id=user_id,on_delete:cascade"`
 
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
@@ -85,7 +85,7 @@ type Follow struct {
 type Message struct {
 	bun.BaseModel `bun:"table:message"`
 
-	ID        int32     `json:"messageId" bun:"message_id,pk"`
+	ID        int32     `json:"messageId" bun:"message_id,pk,autoincrement"`
 	UserFrom  int32     `json:"userFrom" bun:"user_from"`
 	UserTo    int32     `json:"userTo" bun:"user_to"`
 	Content   string    `json:"content" bun:"content"`

@@ -7,7 +7,9 @@ package graph
 import (
 	"backend/pkg/db"
 	"backend/pkg/gql/graph/model"
+	"backend/pkg/utils"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -34,6 +36,12 @@ func (r *mutationResolver) CreateComment(ctx context.Context, input model.NewCom
 	if err != nil {
 		return nil, err
 	}
+
+	msg := fmt.Sprintf("一位用户评论了你的帖子: %s", *input.Content)
+	if r.sendMsgTo(ctx, msg, utils.SysAccountID, int(post.UserID)) != nil {
+		return nil, err
+	}
+
 	return comment, nil
 }
 
@@ -126,12 +134,6 @@ func (r *queryResolver) Comment(ctx context.Context, input model.GetCommentInput
 		Offset(input.Offset).Scan(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	for i := range comments {
-		if like, ok := r.Cache.PostLike.Get(int(comments[i].ID)); ok {
-			comments[i].Like = int32(*like)
-		}
 	}
 
 	return comments, nil

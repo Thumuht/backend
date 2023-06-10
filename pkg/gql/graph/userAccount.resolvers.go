@@ -36,6 +36,10 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 		return nil, err
 	}
 
+	if r.sendMsgTo(ctx, "welcome to thumuht, new user!", utils.SysAccountID, int(user.ID)) != nil {
+		return nil, fmt.Errorf("failed to send message")
+	}
+
 	return user, nil
 }
 
@@ -162,26 +166,34 @@ func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageI
 
 	meId, _ := r.Cache.Sessions.Get(meTok)
 
-	msg := &db.Message{
-		UserFrom: int32(*meId),
-		UserTo:   int32(input.ToID),
-		Content:  input.Content,
-		IsNew:    true,
-	}
-
-	if ch, ok := r.Cache.Notifier.Get(input.ToID); ok {
-		go func() {
-			*ch <- msg
-		}()
-		msg.IsNew = false
-	}
-
-	_, err = r.DB.NewInsert().Model(msg).Exec(ctx)
-	if err != nil {
+	if r.sendMsgTo(ctx, input.Content, *meId, input.ToID) != nil {
 		return false, err
 	}
 
 	return true, nil
+}
+
+func (r *mutationResolver) sendMsgTo(ctx context.Context, msg string, from int, to int) error {
+	message := &db.Message{
+		UserFrom: int32(from),
+		UserTo:   int32(to),
+		Content:  msg,
+		IsNew:    true,
+	}
+
+	if ch, ok := r.Cache.Notifier.Get(int(message.UserTo)); ok {
+		go func() {
+			*ch <- message
+		}()
+		message.IsNew = false
+	}
+
+	_, err := r.DB.NewInsert().Model(message).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Login is the resolver for the login field.

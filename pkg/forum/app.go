@@ -37,8 +37,6 @@ func NewForum() *App {
 	}
 	database.InitModels(app.DB)
 	app.Cache = database.NewAppCache()
-	app.Cache.PostLike.SetFlushTarget("post", "post_id", "like", app.DB)
-	app.Cache.PostView.SetFlushTarget("post", "post_id", "view", app.DB)
 	app.Cache.CommentLike.SetFlushTarget("comment", "comment_id", "like", app.DB)
 
 	app.GQL = handler.NewDefaultServer(
@@ -72,7 +70,21 @@ func NewForum() *App {
 
 	SetRouter(&app)
 
+	// set up a system account
+	setUpSysAcc(&app)
+
 	return &app
+}
+
+func setUpSysAcc(app *App) {
+	// create a system account
+	sys := database.User{
+		Nickname: "论坛小助手",
+	}
+	_, err := app.DB.NewInsert().Model(&sys).Exec(context.Background())
+	if err != nil {
+		panic("cannot create system account")
+	}
 }
 
 func SetRouter(app *App) {
