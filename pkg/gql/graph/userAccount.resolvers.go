@@ -101,12 +101,32 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUse
 	}
 	user := &db.User{
 		ID:       int32(gctx.GetInt("userId")),
-		Nickname: *input.Nickname,
-		Password: *input.Password,
-		Email:    *input.Email,
-		About:    *input.About,
-		Avatar:   *input.Avatar,
 	}
+
+	if input.Nickname != nil {
+		user.Nickname = *input.Nickname
+	}
+
+	if input.Password != nil {
+		pw, err := bcrypt.GenerateFromPassword([]byte(*input.Password), 0)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = string(pw)
+	}
+
+	if input.Email != nil {
+		user.Email = *input.Email
+	}
+
+	if input.About != nil {
+		user.About = *input.About
+	}
+
+	if input.Avatar != nil {
+		user.Avatar = *input.Avatar
+	}
+
 	_, err = r.DB.NewUpdate().Model(user).OmitZero().Returning("*").
 		Where("user_id = ?", user.ID).Exec(ctx)
 	if err != nil {
@@ -171,29 +191,6 @@ func (r *mutationResolver) SendMessage(ctx context.Context, input model.MessageI
 	}
 
 	return true, nil
-}
-
-func (r *mutationResolver) sendMsgTo(ctx context.Context, msg string, from int, to int) error {
-	message := &db.Message{
-		UserFrom: int32(from),
-		UserTo:   int32(to),
-		Content:  msg,
-		IsNew:    true,
-	}
-
-	if ch, ok := r.Cache.Notifier.Get(int(message.UserTo)); ok {
-		go func() {
-			*ch <- message
-		}()
-		message.IsNew = false
-	}
-
-	_, err := r.DB.NewInsert().Model(message).Exec(ctx)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Login is the resolver for the login field.
