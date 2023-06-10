@@ -14,13 +14,13 @@ func (r *mutationResolver) sendMsgTo(ctx context.Context, msg string, from int, 
 	}
 
 	if ch, ok := r.Cache.Notifier.Get(int(message.UserTo)); ok {
-		go func() {
+		defer func() {
 			*ch <- message
 		}()
 		message.IsNew = false
 	}
 
-	_, err := r.DB.NewInsert().Model(message).Exec(ctx)
+	_, err := r.DB.NewInsert().Model(message).Returning("*").Exec(ctx)
 	if err != nil {
 		return err
 	}
