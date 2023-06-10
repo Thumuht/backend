@@ -45,13 +45,15 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 
 // FollowUser is the resolver for the followUser field.
 func (r *mutationResolver) FollowUser(ctx context.Context, input int) (bool, error) {
-	gctx, err := utils.GinContextFromContext(ctx)
+	userTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return false, err
 	}
 
+	userId, _ := r.Cache.Sessions.Get(userTok)
+
 	_, err = r.DB.NewInsert().Model(&db.Follow{
-		FollowFromId: int32(gctx.GetInt("userId")), // me
+		FollowFromId: int32(*userId), // me
 		FollowToId:   int32(input),
 	}).Exec(ctx)
 
@@ -95,12 +97,15 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, input int) (bool, err
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUser) (*db.User, error) {
 	// get userId from context
-	gctx, err := utils.GinContextFromContext(ctx)
+	userTok, err := utils.GetMe(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	userId, _ := r.Cache.Sessions.Get(userTok)
+
 	user := &db.User{
-		ID:       int32(gctx.GetInt("userId")),
+		ID: int32(*userId),
 	}
 
 	if input.Nickname != nil {
@@ -244,15 +249,13 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginSession) 
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	gctx, err := utils.GinContextFromContext(ctx)
-	if err != nil {
-		return false, fmt.Errorf("cannot get gin context, access denied: %w", err)
-	}
+	userTok, _ := utils.GetMe(ctx)
 
-	r.Cache.Notifier.Remove(gctx.GetInt("userId"))
+	userId, _ := r.Cache.Sessions.Get(userTok)
 
-	token := gctx.GetHeader("Token")
-	return true, r.Cache.Sessions.Remove(token)
+	r.Cache.Notifier.Remove(*userId)
+
+	return true, r.Cache.Sessions.Remove(userTok)
 }
 
 // Users is the resolver for the users field.
