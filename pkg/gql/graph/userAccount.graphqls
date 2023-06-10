@@ -81,6 +81,7 @@ extend type Query {
   me: User!                                             @login
   """ 获取本人的私信 """
   myMessage(from: Int, offset: Int = 0, limit: Int = 10): [Message!]!                                @login
+  messageNum(from: Int!): Int!                           @login
   """获取和我私信的用户"""
   myMessageUser: [User!]!                               @login
 }

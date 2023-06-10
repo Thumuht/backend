@@ -329,6 +329,24 @@ func (r *queryResolver) MyMessage(ctx context.Context, from *int, offset *int, l
 	return msgs, nil
 }
 
+// MessageNum is the resolver for the messageNum field.
+func (r *queryResolver) MessageNum(ctx context.Context, from int) (int, error) {
+	// count from message where user_from = from and user_to = me
+	meTok, err := utils.GetMe(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	meId, _ := r.Cache.Sessions.Get(meTok)
+
+	var num int
+	num, err = r.DB.NewSelect().Model((*db.Message)(nil)).Where("user_from = ?", from).Where("user_to = ?", *meId).Count(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return num, nil
+}
+
 // MyMessageUser is the resolver for the myMessageUser field.
 func (r *queryResolver) MyMessageUser(ctx context.Context) ([]db.User, error) {
 	// select distinct users from message
