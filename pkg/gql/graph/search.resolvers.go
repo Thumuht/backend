@@ -7,10 +7,21 @@ package graph
 import (
 	"backend/pkg/db"
 	"context"
-	"fmt"
+	"strings"
 )
 
 // GlobalSearch is the resolver for the globalSearch field.
 func (r *queryResolver) GlobalSearch(ctx context.Context, query string) ([]*db.Post, error) {
-	panic(fmt.Errorf("not implemented: GlobalSearch - globalSearch"))
+	// split the query into words
+	// search for each word in the database, use `LIKE`
+	// return the results
+	words := strings.Split(query, " ")
+	var posts []*db.Post
+	pquery := r.DB.NewSelect().Model(&posts).Join("JOIN user ON post.post_userid = user.user_id")
+	for _, word := range words {
+		pquery = pquery.Where("title LIKE ? OR content LIKE ? OR user.nickname LIKE ? OR tag LIKE ?",
+			"%"+word+"%", "%"+word+"%", "%"+word+"%", "%"+word+"%")
+	}
+	pquery.Scan(ctx)
+	return posts, nil
 }

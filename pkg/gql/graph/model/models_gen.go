@@ -23,7 +23,7 @@ type GetPostInput struct {
 	OrderBy  PostOrderBy `json:"orderBy"`
 	Order    Order       `json:"order"`
 	Followed *bool       `json:"followed,omitempty"`
-	Tags     *int        `json:"tags,omitempty"`
+	Tags     *string     `json:"tags,omitempty"`
 }
 
 type GetUserInput struct {
@@ -58,7 +58,7 @@ type NewPost struct {
 	UserID   int     `json:"userId"`
 	Title    *string `json:"title,omitempty"`
 	Content  *string `json:"content,omitempty"`
-	Tag      *int    `json:"tag,omitempty"`
+	Tag      *string `json:"tag,omitempty"`
 	Position *string `json:"position,omitempty"`
 }
 

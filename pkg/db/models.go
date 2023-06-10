@@ -35,7 +35,7 @@ type Post struct {
 	Like        int32     `json:"like" bun:"like"`
 	CommentsNum int32     `json:"commentsNum" bun:"comments_num"`
 	UserID      int32     `json:"userId" bun:"post_userid"`
-	Tag         int32     `json:"tag" bun:"tag"`
+	Tag         string    `json:"tag" bun:"tag"`
 	CreatedAt   time.Time `json:"createdAt" bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt   time.Time `json:"updatedAt" bun:",nullzero,notnull,default:current_timestamp"`
 

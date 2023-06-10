@@ -27,7 +27,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.NewPost) 
 	}
 
 	if input.Tag != nil {
-		post.Tag = int32(*input.Tag)
+		post.Tag = *input.Tag
 	}
 
 	if input.Position != nil {

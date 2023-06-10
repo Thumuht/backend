@@ -4667,9 +4667,9 @@ func (ec *executionContext) _Post_tag(ctx context.Context, field graphql.Collect
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(int32)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOInt2int32(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Post_tag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4679,7 +4679,7 @@ func (ec *executionContext) fieldContext_Post_tag(ctx context.Context, field gra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8692,7 +8692,7 @@ func (ec *executionContext) unmarshalInputGetPostInput(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8902,6 +8902,10 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 		asMap[k] = v
 	}
 
+	if _, present := asMap["tag"]; !present {
+		asMap["tag"] = "none"
+	}
+
 	fieldsInOrder := [...]string{"userId", "title", "content", "tag", "position"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
@@ -8940,7 +8944,7 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tag"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

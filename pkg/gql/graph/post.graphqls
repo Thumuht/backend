@@ -10,7 +10,7 @@ type Post @goModel(
   position: String
   createdAt: Time
   updatedAt: Time
-  tag: Int
+  tag: String
 
   user: User
   comment: [Comment]
@@ -22,7 +22,7 @@ input NewPost {
   userId: Int!
   title: String
   content: String
-  tag: Int
+  tag: String = "none"
   position: String
 }
 
@@ -51,7 +51,7 @@ input GetPostInput {
   orderBy: PostOrderBy! = post_id
   order: Order! = ASC
   followed: Boolean = false
-  tags: Int
+  tags: String
 }
 
 extend type Query {
