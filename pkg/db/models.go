@@ -21,6 +21,7 @@ type User struct {
 	Comment      []*Comment `json:"comment" bun:"rel:has-many,join:user_id=comment_userid"`
 	Follow       []*Follow  `json:"follow" bun:"rel:has-many,join:user_id=follow_from_id"`
 	Follower     []*Follow  `json:"follower" bun:"rel:has-many,join:user_id=follow_to_id"`
+	Block        []*Block   `json:"block"`
 	BookmarkList []*Post    `json:"userBookmarkList" bun:"m2m:bookmark,join:User=Post"`
 }
 
@@ -76,9 +77,6 @@ type Follow struct {
 	FollowFromId int32 `bun:",pk"`
 	FollowToId   int32 `bun:",pk"`
 
-	FollowFrom *User `json:"followFrom" bun:"rel:belongs-to,join:follow_from_id=user_id,on_delete:cascade"`
-	FollowTo   *User `json:"followTo" bun:"rel:belongs-to,join:follow_to_id=user_id,on_delete:cascade"`
-
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
@@ -90,7 +88,7 @@ type Message struct {
 	UserTo    int32     `json:"userTo" bun:"user_to"`
 	Content   string    `json:"content" bun:"content"`
 	IsNew     bool      `json:"isNew" bun:"is_new"`
-	CreatedAt time.Time `json:"createdAt" bun:"created_at"`
+	CreatedAt time.Time `json:"createdAt" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 }
 
 type Bookmark struct {
@@ -107,9 +105,4 @@ type Block struct {
 
 	BlockFromId int32 `bun:"block_from_id,pk"`
 	BlockToId   int32 `bun:"block_to_id,pk"`
-
-	BlockFrom *User `json:"blockFrom" bun:"rel:belongs-to,join:block_from_id=user_id,on_delete:cascade"`
-	BlockTo   *User `json:"blockTo" bun:"rel:belongs-to,join:block_to_id=user_id,on_delete:cascade"`
-
-	CreatedAt int32 `bun:",nullzero,notnull,default:current_timestamp"`
 }

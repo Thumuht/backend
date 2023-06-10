@@ -261,7 +261,7 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, input model.GetUserInput) ([]db.User, error) {
 	var users []db.User
-	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").Relation("Follow").Relation("Block").Relation("Follower").
+	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").Relation("BookmarkList").
 		Order(input.OrderBy.String() + " " + input.Order.String()).Limit(input.Limit).
 		Offset(input.Offset).
 		Scan(ctx)
@@ -299,7 +299,8 @@ func (r *queryResolver) Me(ctx context.Context) (*db.User, error) {
 	meId, _ := r.Cache.Sessions.Get(meTok)
 
 	var user db.User
-	err = r.DB.NewSelect().Model(&user).Where("user_id = ?", *meId).Scan(ctx)
+	err = r.DB.NewSelect().Model(&user).Relation("Post").Relation("Comment").Relation("BookmarkList").
+		Where("user_id = ?", *meId).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +373,7 @@ func (r *userResolver) Follow(ctx context.Context, obj *db.User) ([]*db.User, er
 	// find all user that obj follows
 	var users []*db.User
 	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
-		Where("user_id IN (SELECT follow_id FROM follow WHERE user_id = ?)", obj.ID).Scan(ctx)
+		Where("user_id IN (SELECT follow_to_id FROM follow WHERE follow_from_id = ?)", obj.ID).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +385,7 @@ func (r *userResolver) Follower(ctx context.Context, obj *db.User) ([]*db.User, 
 	// follow all user that follows obj
 	var users []*db.User
 	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
-		Where("user_id IN (SELECT user_id FROM follow WHERE follow_id = ?)", obj.ID).Scan(ctx)
+		Where("user_id IN (SELECT follow_from_id FROM follow WHERE follow_to_id = ?)", obj.ID).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +397,7 @@ func (r *userResolver) Block(ctx context.Context, obj *db.User) ([]*db.User, err
 	// find all user that obj blocks
 	var users []*db.User
 	err := r.DB.NewSelect().Model(&users).Relation("Post").Relation("Comment").
-		Where("user_id IN (SELECT block_to_id FROM block WHERE block_from = ?)", obj.ID).Scan(ctx)
+		Where("user_id IN (SELECT block_to_id FROM block WHERE block_from_id = ?)", obj.ID).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
